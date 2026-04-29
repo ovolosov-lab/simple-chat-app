@@ -502,22 +502,20 @@ async def get_ducuments(session: SessionDep, currnet_user: UserInfo = Depends(ge
 @app.post("/documents/add",  tags=["Communicator", "add document"], summary="Add a new document")
 async def add_document(new_doc: Docs, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     if current_user.userid > 0:
-        sql = text("SELECT A.filename, M.messtext FROM attachments A INNER JOIN messages M ON A.mess_id=M.id WHERE A.mess_id=:mess_id LIMIT 1")
+        sql = text("SELECT A.filename, A.origname FROM attachments A WHERE A.mess_id=:mess_id LIMIT 1")
         result = await session.execute(sql, {"mess_id": new_doc.mess_id})
         row = result.first()   
         if row:  
-            origFileName: str = str(row.messtext) 
-            origFileName = origFileName.split('>', 1)[1].split('<', 1)[0].strip()
             try:
-                new_document = DocsOrm(mess_id=new_doc.mess_id, filename=origFileName, savedname=row.filename, notes='')
+                new_document = DocsOrm(mess_id=new_doc.mess_id, filename=row.origname, savedname=row.filename, notes='')
                 session.add(new_document)
                 await session.commit()
-                logger.success(f"Document {origFileName} successfully added")
+                logger.success(f"Document {row.origname} successfully added")
                 return {"result": "ok"}
             except IntegrityError as e:
                 await session.rollback()
                 logger.error(f"Error occurred while trying to add already added document. {e}")
-                return {"result": f"Document {origFileName} is already added"}            
+                return {"result": f"Document {row.origname} is already added"}            
             except Exception as e:
                 await session.rollback()
                 logger.error(f"Error occurred while trying to add document: {e}")    
