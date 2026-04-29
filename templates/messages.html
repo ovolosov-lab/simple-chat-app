@@ -72,7 +72,7 @@
         <input type="hidden" name="userid" id="userid" value="{{userid}}">
         <textarea id="messtext_inp" name="messtext" placeholder="{{messtext_input_placeholder}}" required maxlength="2000"> </textarea>
         <button id="send_message_btn" type="submit" class="send-btn" title="{{send_message_btn_title}}">&#9654;</button>
-        <button id="attach_file_btn" type="button" onclick="showFileUploadDialog()" class="send-btn light" title="{{attach_file_btn_title}}">&#128206;</button>
+        <button id="attach_file_btn" type="button" class="send-btn light" title="{{attach_file_btn_title}}">&#128206;</button>
    
      </div>  
     </form>
@@ -134,8 +134,8 @@
     <button id="fio_confirm">{{fio_confirm}}</button>
 </dialog>
 
-<dialog id="file_upload_block" class="fileUploadDiv">  
-    <input type="file" id="fileInput" placeholder="{{fileInput_placeholder}}" style="height:20px;">
+<dialog id="file_upload_block" class="fileUploadDiv" data-filename="">  
+    <input type="file" id="fileInput" placeholder="{{fileInput_placeholder}}" on style="height:20px;">
     <div><button id="upload_btn" class="blue-button">{{upload_btn}}</button> <button onclick="closeUploadDialog()" class="blue-button">{{close_file_btn}}</button></div>
     <p id="status"></p>
 </dialog>   
@@ -200,7 +200,7 @@
     const textArea = document.getElementById('messtext_inp');
     const searchBtn = document.getElementById('searchBtn');
     const searchInput = document.getElementById('searchInput');      
-    document.getElementById('upload_btn').disabled = true;
+    // document.getElementById('upload_btn').disabled = true;
  
 
     // При загрузке страницы проверяем, сохранена ли тема
@@ -213,14 +213,13 @@
         }
     });
 
-    function showFileUploadDialog(){
+    document.getElementById("attach_file_btn").addEventListener('click', (e) => {
         uploadDialog = document.getElementById('file_upload_block');
         const button = document.getElementById('upload_btn');
         const button2 = document.getElementById('send_message_btn');
-        button.disabled = !button.disabled;
-        button2.disabled = !button2.disabled;        
         uploadDialog.showModal();  
-    }
+        e.stopPropagation();
+    })
 
     function closeUploadDialog() {
         const uploadDialog = document.getElementById('file_upload_block');
@@ -397,19 +396,21 @@
                     left_right = "";    
                 }    
 
+                let messAtext = msg.messtext;
                 let tmpTitle = ''; 
-                if (msg.messtext.includes("&#128206")) {
+                if (messAtext.includes("&#128206")) {
                     noFiles = 0;
                     tmpTitle = ' title="{{download_the_file_title}}"';
+                    messAtext = '<a href="/download-attachment/'+msg.id+'">'+msg.messtext+'</a>';
                 }
-
+               
                 let tempHTML = `
                     <span class="username" onclick="like_click(${msg.id}, '${msg.username}')">${msg.username}</span>
-                    <span class="messtext" id="mt_${msg.id}"${tmpTitle}>${msg.messtext}</span>`;
+                    <span class="messtext" id="mt_${msg.id}"${tmpTitle}>${messAtext}</span>`;
 
                 if ((msg.messtext.includes("&#128206")) || (msg.messtext.includes("<img")) || (msg.task == 1)) {  
                     noTask = 1; 
-                    tempHTML += `<span class="timestamp" id="cr_${msg.id}">${msg.created_at}</span>`;
+                    tempHTML += `<span class="timestamp" id="cr_${msg.id}">${msg.created_at}</span>`;                    
                 } else {
                     tempHTML += `<span class="timestamp click_me" title="{{create_task_timestamp_title}}" id="created_${msg.id}">${msg.created_at}</span>`;
                 }    
@@ -474,7 +475,11 @@
                 } else { isRight = true; }
                 div.className = className;   
                 if ((msg.messtext.includes("&#128206")) || (msg.messtext.includes("<img"))) {
-                    div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${msg.messtext}</span><span id="cr_${msg.id}" class="timestamp">${msg.created_at}</span>`; 
+                    let mess_text =  msg.messtext;   
+                    if (msg.messtext.includes("&#128206")) {
+                        mess_text = `<a href="/download-attachment/${msg.id}">${msg.messtext}</a>`;   
+                    }
+                    div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${mess_text}</span><span id="cr_${msg.id}" class="timestamp">${msg.created_at}</span>`; 
                     div.dataset.noTask = 1;
                     if (msg.messtext.includes("&#128206")) {
                         div.dataset.noFiles = 0;                    
@@ -801,7 +806,11 @@
                     } else { isRight = true; }
                     div.className = className;  
                     if ((msg.messtext.includes("&#128206")) || (msg.messtext.includes("<img")) || (msg.task == 1)) { 
-                        div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${msg.messtext}</span><span id="cr_${msg.id}" class="timestamp">${msg.created_at}</span>`;
+                        let mess_text = msg.messtext;
+                        if (msg.messtext.includes("&#128206")) {
+                            mess_text = `<a href="/download-attachment/${msg.id}">${mess_text}</a>`;   
+                        }
+                        div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${mess_text}</span><span id="cr_${msg.id}" class="timestamp">${msg.created_at}</span>`;
                     } else {
                         div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${msg.messtext}</span><span id="created_${msg.id}" class="timestamp click_me" title="{{create_task_timestamp_title4}}">${msg.created_at}</span>`;
                     }    
@@ -838,6 +847,7 @@
     //  загрузка вложения к сообщению (file upload) - по клику на кнопке
     document.getElementById("upload_btn").onclick = async (e) => {
         e.preventDefault();
+        const uploadBlock = document.getElementById('file_upload_block');
         const fileInput = document.getElementById('fileInput');
         const status = document.getElementById('status');
 
@@ -848,6 +858,13 @@
         }
 
         const file = fileInput.files[0];
+
+        if (file.name == uploadBlock.dataset.filename) {
+            status.innerText = `{{the_same_file}}`;               
+            console.log(file.name, " === ", uploadBlock.dataset.filename);
+            return;
+        }
+
         const formData = new FormData();
         
         formData.append('file', file);
@@ -868,6 +885,7 @@
                             status.innerText = result.error; 
                         } else {
                             status.innerText = `{{file_uploaded_successfully}} ${result.filename}`;
+                            uploadBlock.dataset.filename = result.filename; 
                         }
                         console.log(result);
                     }
@@ -881,7 +899,7 @@
         }
         fileInput.value = ''; // Сброс выбора файла
         //document.getElementById('upload_btn').disabled = true;
-        //document.getElementById('file_upload_block').close();
+        uploadBlock.close();
         e.stopPropagation
     }
 

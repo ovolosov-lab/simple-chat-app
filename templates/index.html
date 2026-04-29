@@ -13,7 +13,7 @@
 <form action="/users/auth" class="login-form" method="POST">
 <h2>{{ index_txt_1 }}</h2>
 <input class="login-input" id="username" name="username" placeholder="{{ index_username_placeholder }}" required="" type="text"/>
-<input class="login-input" id="password" name="password" placeholder="{{ index_password_placeholder }}" required="" type="password"/>
+<input class="login-input" id="password" name="password" placeholder="{{ index_password_placeholder }}" required="" type="password" autocomplete="current-password"/>
 <button class="login-button" type="submit">{{ index_txt_4 }}</button>
 <p class="flash_msg">{{ flash_msg }}</p>
 </form>

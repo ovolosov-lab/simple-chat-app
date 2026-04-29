@@ -56,7 +56,8 @@ class AttachmentsOrm(Base):
     __tablename__ = "attachments"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)    
     mess_id: Mapped[int] = mapped_column(ForeignKey('messages.id', ondelete="CASCADE"), index=True) 
-    filename: Mapped[str] = mapped_column(String(255), nullable=False)      
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)     
+    origname: Mapped[str] = mapped_column(String(255), nullable=False)
 
 class TasksOrm(Base):
     __tablename__ = "tasks"

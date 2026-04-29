@@ -242,17 +242,22 @@ async def upload_file(session: SessionDep, file: UploadFile = File(...), current
     
     #  Writing file info to the database and linking it to the message   
     if result['error'] == 'OK':
-        extension = result["ext"]
-        unique_filename = result["unique_filename"]
-        if ((extension == "png") or (extension == "jpg") or (extension == "jpeg")):
-            mess_text = f"<img src='/uploads/{unique_filename}' width='90%' />"
+        extension:str = result["ext"]
+        extension:str = extension.lower()
+        shortFileName:str = result["orig_filename"]
+    
+        if ((extension == ".png") or (extension == ".jpg") or (extension == ".jpeg")):
+            shortFileName = f"<img src='/uploads/{result['unique_filename']}' width='90%' />"
         else:    
-            mess_text = f"&#128206; <a href='/download-attachment/{unique_filename}'>{file.filename}</a> &#128206;"    
-        new_message = MessageOrm(userid=current_user.userid, messtext=mess_text, checked=0)
+            if len(shortFileName) > 30:
+                shortFileName = shortFileName[:22] + '... ' + extension
+            shortFileName = "&#128206; " + shortFileName + " &#128206;"    
+            # mess_text = f"&#128206; <a href='/download-attachment/{unique_filename}'>{origFileName}</a> &#128206;"    
+        new_message = MessageOrm(userid=current_user.userid, messtext=shortFileName, checked=0)
         session.add(new_message)    
         await session.flush() 
-        sql = text("INSERT INTO attachments(mess_id, filename) VALUES(:mess_id, :filename)") 
-        result = await session.execute(sql, {"mess_id": new_message.id, "filename": unique_filename}) 
+        sql = text("INSERT INTO attachments(mess_id, filename, origname) VALUES(:mess_id, :filename, :origname)") 
+        result = await session.execute(sql, {"mess_id": new_message.id, "filename": result["unique_filename"], "origname": result["orig_filename"]}) 
         await session.commit()  
         logger.success(f"File {file.filename} successfully uploaded")
         return {"filename": file.filename, "status": "saved"}
@@ -261,23 +266,23 @@ async def upload_file(session: SessionDep, file: UploadFile = File(...), current
 
 
 # Скачать файл из сообщения (ранее загруженный файл)
-@app.get("/download-attachment/{filename}", tags=["Communicator", "files", "download"], summary="download the attachment file")
-async def download_file(session: SessionDep, filename: str, current_user: UserInfo = Depends(get_current_user)):
+@app.get("/download-attachment/{id}", tags=["Communicator", "files", "download"], summary="download the attachment file")
+async def download_file(session: SessionDep, id: int, current_user: UserInfo = Depends(get_current_user)):
     if current_user.userid > 0:    
-        sql = text("SELECT A.messtext FROM messages A INNER JOIN attachments B ON A.id=B.mess_id WHERE B.filename=:filename LIMIT 1")
-        result = await session.execute(sql, {"filename": filename})
+        sql = text("SELECT B.origname, B.filename FROM attachments B WHERE B.mess_id=:id LIMIT 1")
+        result = await session.execute(sql, {"id": id})
         row = result.first() 
         if row:
-            origFileName: str = row.messtext.split('>')[1].split('<')[0].strip() 
-            file_path = os.path.join(UPLOAD_DIR, filename)   
+            file_path = os.path.join(UPLOAD_DIR, row.filename)   
             if not os.path.exists(file_path):
                 return {"error": ERROR_MESSAGES_EN.get("file_not_found","File not found") if settings.language == "en" else ERROR_MESSAGES_RU.get("file_not_found","Файл не найден")}
             return FileResponse(
                 path=file_path, 
-                filename=origFileName,  
+                filename=row.origname,  
                 media_type='application/octet-stream'
             )
-
+        else:
+            return {"error": ERROR_MESSAGES_EN.get("file_not_found","File not found") if settings.language == "en" else ERROR_MESSAGES_RU.get("file_not_found","Файл не найден")}
 
 @app.get("/messages/get_prev/{id}", tags=["Communicator", "messages history"], summary="Get all the previous messages")
 async def prev_messages(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):

@@ -95,9 +95,9 @@ def save_file_sync(file_obj, path):
 
 
 async def save_user_file_to_disk(userName: str, UPLOAD_DIR: str, file: UploadFile = File(...)) -> dict: 
-    if file.filename is None:
+    if file.filename is None or len(file.filename) > 255:
         logger.warning(f"FileName is missing for user: {userName}")
-        return {"error": "File name missing" if settings.language == "en" else "Имя файла отсутствует"}
+        return {"error": "File name missing or invalid" if settings.language == "en" else "Недопустимое имя файла"}
   
     origFileName: str = file.filename.replace(" ", "_")
     origFileName = re.sub(r'(?u)[^-\w.]', '', origFileName)

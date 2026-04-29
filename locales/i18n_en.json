@@ -94,5 +94,6 @@
     "task_title_label": "Task title",
     "show_diagram": "Show diagram",
     "deadline": "Deadline",
-    "executor": "Executor"
+    "executor": "Executor",
+    "the_same_file": "This file has already been sent"
 }
