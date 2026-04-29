@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:latest
+    container_name: postgres_container
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - pgdata:/var/lib/postgresql/data/pgdata
+    # Best practice for PostgreSQL health check is to use the pg_isready command
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    volumes:
+      - uploads_data:/app/uploads
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=db  # We can use the service name 'db' as the hostname to connect to the PostgreSQL container
+      - DB_USER=${DB_USER}
+      - DB_PORT=5432
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 60s      # Check every 60 seconds
+      timeout: 10s       # Await up to 10 seconds for a response
+      retries: 3         # Three attempts before marking the service as unhealthy
+      start_period: 20s  # Give the app some time to start before health checks begin
+    depends_on:
+      db:
+        condition: service_healthy # App will wait until db is healthy before starting
+
+volumes:
+  pgdata:
+    driver: local
+  uploads_data:
+    driver: local

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="/static/favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="/static/styles.css" rel="stylesheet"/>
+<title>Colleagues</title>
+</head>
+<body>
+<div class="comm-header" id="app_header">{{ reg_app_header }}</div>
+<div class="login-container">
+<form action="/users/add" class="reg-form" method="POST">
+<h2 id="page_header">{{ reg_page_header }}</h2>
+<input class="login-input" id="username" name="username" placeholder="{{ reg_username_placeholder }}" required="" type="text"/>
+<input class="login-input" id="fio" name="fio" placeholder="{{ reg_fio_placeholder }}" type="text"/>
+<input class="login-input" id="secret" name="secret" placeholder="{{ reg_secret_placeholder }}" required="" type="text"/>
+<input class="login-input" id="password1" name="password1" placeholder="{{ reg_password1_placeholder }}" required="" type="password"/>
+<input class="login-input" id="password2" name="password2" placeholder="{{ reg_password2_placeholder }}" required="" type="password"/>
+<button class="login-button" id="submit_btn" type="submit">{{ reg_submit_btn }}</button>
+</form>
+</div>
+</body>
+</html>

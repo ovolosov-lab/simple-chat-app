@@ -1,0 +1,18 @@
+# Окружение и секреты (САМОЕ ВАЖНОЕ)
+.env
+
+# Папки Python
+__pycache__/
+*.py[cod]
+.venv/
+env/
+venv/
+logs/
+uploads/
+scan4i18n.py
+test_main.py
+
+# Docker
+.dockerignore
+*.log
+
