@@ -8,6 +8,12 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease; 
 }
 
+@media (max-width: 768px) {
+  body {
+    height: 100dvh;
+  }  
+}
+
 .hide { 
   display: none;
   visibility:hidden;
