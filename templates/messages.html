@@ -200,8 +200,18 @@
     const textArea = document.getElementById('messtext_inp');
     const searchBtn = document.getElementById('searchBtn');
     const searchInput = document.getElementById('searchInput');      
-    // document.getElementById('upload_btn').disabled = true;
- 
+
+    
+    //  --------------------------------------------------------------
+    // Первоначальная загрузка сообщений и обновление каждые 3 секунды
+    set_minimal_id();
+    fetchMessages();
+    setInterval(fetchMessages, parseInt("{{messages_check_interval}}"));
+    setInterval(fetchActivUsers, parseInt("{{users_check_interval}}"));
+    fetchActivUsers(); 
+    set_userList();
+    // ----------------------------------------------------------------
+
 
     // При загрузке страницы проверяем, сохранена ли тема
     document.addEventListener('DOMContentLoaded', () => {
@@ -364,11 +374,11 @@
 
 
     // Функция начальной отрисовки сообщений - все сообщения
-    function renderAllMessages(data) {
+    function renderAllMessages(data, welcome_mess_block) {
         let temp_id = 0;
         let isStart = true;
         if (lastId == 0) {
-            messagesList.innerHTML = ''; // Очищаем перед обновлением 
+            messagesList.innerHTML = welcome_mess_block; 
             data.forEach(msg => {
                 if (isStart) {
                     firstId = msg.id;
@@ -541,7 +551,6 @@
             messagesList.appendChild(fragment);
           }  
         }
-
         // Прокрутка вниз к последнему сообщению
         if (scroll_switch.checked) { 
             if (haveNewMessage) {
@@ -553,6 +562,16 @@
         }
     }
 
+    // Welcome and brief description of the program
+    async function show_welcome_message(){
+        const response = await fetch('/static/{{welcome}}', {credentials: 'include'}); 
+        const data = await response.json();  
+        if (data) {         
+            console.log(data.username, data.messtext)
+           return `<div class="message-box-right welcome"><span class="username">${data.username}</span><span id="mt_welcome" class="messtext">${data.messtext}</span></div>`; 
+        }
+        return '';
+    }
 
     // добавляем на границе блока с сообщением количество прочтений и лайки
     function renderConditions(data) { 
@@ -590,16 +609,21 @@
     // Запросить сообщения пользователей - Асинхронный запрос к FastAPI
     async function fetchMessages() {
         try {
+            let welcome = '';
             const response = await fetch('/messages/get_messages/'+lastId, {credentials: 'include'}); 
             const data = await response.json();
             
             if (lastId == 0) {
-                renderAllMessages(data);
+                if (parseInt('{{msg_count}}') < 10) {
+                    welcome = await show_welcome_message();
+                }
+
+                renderAllMessages(data, welcome);
             } else {
                 renderNewMessages(data);
             }    
         } catch (error) {
-            console.error('Ошибка загрузки сообщений:', error);
+            console.error('Messages loading error:', error);
             window.location.href = "/";
         }
 
@@ -617,7 +641,7 @@
                     }
                 }
             } catch (error) {
-                console.error('Ошибка загрузки сообщений:', error);
+                console.error('Messages loading error:', error);
             }
         }
     }
@@ -653,18 +677,6 @@
         }
     }
     
-
-    //  --------------------------------------------------------------
-    // Первоначальная загрузка сообщений и обновление каждые 3 секунды
-    // const audio = new Audio('/static/ring.mp3');
-    set_minimal_id();
-    fetchMessages();
-    setInterval(fetchMessages, parseInt("{{messages_check_interval}}"));
-    setInterval(fetchActivUsers, parseInt("{{users_check_interval}}"));
-    fetchActivUsers(); 
-    set_userList();
-    // ----------------------------------------------------------------
-
 
     // Функция-дебаунсер (задержка выполнения)
     function debounce(func, delay) {

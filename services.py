@@ -165,3 +165,8 @@ def load_internationalization_data(BASE_DIR: str, language: str) -> dict:
         logger.error(f"i18n file read error: {e}")
         raise HTTPException(status_code=500, detail="Error occurred while loading internationalization data")
 
+
+async def how_much_messages(session: SessionDep) -> int:
+    sql = text("SELECT COUNT(*) FROM messages")
+    result = await session.execute(sql)
+    return result.scalar() or 0

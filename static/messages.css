@@ -187,6 +187,11 @@ hr { margin: 0; }
     box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.2);
 }
 
+.welcome {
+  background: #fff;
+  border: rgb(0, 255, 229) solid 1px;
+}
+
 body.dark-theme .my-message-box {
   background: #fff;
 } 

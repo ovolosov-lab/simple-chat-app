@@ -17,7 +17,7 @@ from tokens import create_access_token, get_current_user
 from sqlalchemy.exc import IntegrityError
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings, logger, ERROR_MESSAGES_EN, ERROR_MESSAGES_RU
-from services import ProtectedStaticFiles, create_new_user, delete_file_from_disk, load_internationalization_data, background_checks, makeFileResponse, no_have_such_message, get_personal_messages, personal, save_user_file_to_disk
+from services import ProtectedStaticFiles, create_new_user, delete_file_from_disk, load_internationalization_data, background_checks, makeFileResponse, no_have_such_message, get_personal_messages, personal, save_user_file_to_disk, how_much_messages
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -83,9 +83,10 @@ async def regstration_page(request: Request, i18n_data: dict = Depends(lambda: l
 
 
 @app.get("/messages", tags=["Communicator", "home page", "messages list"], summary="Welcome to the our communicator home page")
-async def messages_page(request: Request, current_user: UserInfo = Depends(get_current_user), i18n_data: dict = Depends(lambda: load_internationalization_data(BASE_DIR, settings.language))):
+async def messages_page(session: SessionDep, request: Request, current_user: UserInfo = Depends(get_current_user), i18n_data: dict = Depends(lambda: load_internationalization_data(BASE_DIR, settings.language))):
     if (current_user.userid > 0): 
-        data = {"userid": current_user.userid, "username": current_user.username, "messages_check_interval": settings.client_messages_check_interval, "users_check_interval": settings.client_users_check_interval}
+        how_much: int = await how_much_messages(session)
+        data = {"userid": current_user.userid, "username": current_user.username, "messages_check_interval": settings.client_messages_check_interval, "users_check_interval": settings.client_users_check_interval, "msg_count": how_much}
         return templates.TemplateResponse("messages.html", {"request": request, **data, **i18n_data})
     else:
         logger.warning(f"Attempting to access the messages page without authorization")
