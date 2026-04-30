@@ -391,6 +391,16 @@ body.dark-theme .send-btn {
   );
 }
 
+@media (hover: hover) {
+  .send-btn:hover { background: #0056b3; }
+}
+
+@media (max-width: 768px) {
+  .send-btn {
+    touch-action: manipulation;
+  }
+}  
+
 .light { 
   color:white; background:#007bff; box-shadow:#007bff; max-width:35px; padding:0; 
     background-image: radial-gradient(
@@ -400,7 +410,6 @@ body.dark-theme .send-btn {
   );
 
 }
-.send-btn:hover { background: #0056b3; }
 body.dark-theme .send-btn:hover { color: #fff; background: rgb(6 51 237); }
 body.dark-theme .light { padding-right:5px; padding-left:0;}
 

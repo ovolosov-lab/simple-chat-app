@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <meta charset="UTF-8">
     <title>Colleagues</title>
     <link href="https://fonts.googleapis.com/css2?family=Macondo+Swash+Caps&display=swap" rel="stylesheet">
@@ -72,8 +73,7 @@
         <input type="hidden" name="userid" id="userid" value="{{userid}}">
         <textarea id="messtext_inp" name="messtext" placeholder="{{messtext_input_placeholder}}" required maxlength="2000"> </textarea>
         <button id="send_message_btn" type="submit" class="send-btn" title="{{send_message_btn_title}}">&#9654;</button>
-        <button id="attach_file_btn" type="button" class="send-btn light" title="{{attach_file_btn_title}}">&#128206;</button>
-   
+        <button id="attach_file_btn" type="button" class="send-btn light" title="{{attach_file_btn_title}}">&#128206;</button>   
      </div>  
     </form>
  
@@ -225,18 +225,18 @@
 
     document.getElementById("attach_file_btn").addEventListener('click', (e) => {
         uploadDialog = document.getElementById('file_upload_block');
-        const button = document.getElementById('upload_btn');
-        const button2 = document.getElementById('send_message_btn');
+        //const button = document.getElementById('upload_btn');
+        //const button2 = document.getElementById('send_message_btn');
         uploadDialog.showModal();  
         e.stopPropagation();
     })
 
     function closeUploadDialog() {
         const uploadDialog = document.getElementById('file_upload_block');
-        const button = document.getElementById('upload_btn');
-        const button2 = document.getElementById('send_message_btn');
-        button.disabled = !button.disabled;
-        button2.disabled = !button2.disabled;       
+        //const button = document.getElementById('upload_btn');
+        //const button2 = document.getElementById('send_message_btn');
+        //button.disabled = !button.disabled;
+        //button2.disabled = !button2.disabled;       
         uploadDialog.close();
     }
 
@@ -714,31 +714,35 @@
     // Обработка отправки формы message-form
     document.getElementById('message-form').onsubmit = async (e) => {
         e.preventDefault();
-        if (e.submitter == document.getElementById("send_message_btn")) {
-            const userid = document.getElementById("userid").value;
-            const messtext = document.getElementById("messtext_inp").value;   
-            if (messtext != "") {     
-                console.log("Отправка сообщения:", messtext);
-                console.log("userid:", userid);
-
-                // отправляем запрос
-                const response = await fetch("/messages/add", {
-                        method: "POST",
-                        headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                        credentials: 'include',
-                        body: JSON.stringify({ 
-                            userid: userid,
-                            messtext: messtext
-                        })
-                    });
-                const data = await response.json();     
-                console.log("Send message - Server response:", data);
-
-                document.getElementById("messtext_inp").value = '';
-            }
+        if (e.submitter != document.getElementById("attach_file_btn")) {
+            await send_message_request();
         }
     };
 
+    // perform a send message request to back-end
+    async function send_message_request() {
+        const userid = document.getElementById("userid").value;
+        const messtext = document.getElementById("messtext_inp").value;   
+        if (messtext != "") {     
+            console.log("Отправка сообщения:", messtext);
+            console.log("userid:", userid);
+
+            // отправляем запрос
+            const response = await fetch("/messages/add", {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                    credentials: 'include',
+                    body: JSON.stringify({ 
+                        userid: userid,
+                        messtext: messtext
+                    })
+                });
+            const data = await response.json();     
+            console.log("Send message - Server response:", data);
+
+            document.getElementById("messtext_inp").value = '';
+        }
+    }
 
     // Создание (сохранение на сервере) новой задачи -  асинхронный POST Request к FastAPI
     document.getElementById('task_form').onsubmit = async (e) => {
