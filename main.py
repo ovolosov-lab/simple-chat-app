@@ -56,6 +56,7 @@ app.add_middleware(
 )
 
 
+# Health check endpoint to verify that the application is running and can connect to the database
 @app.get("/health")
 async def health_check():
     """Health check endpoint to verify that the application is running and can connect to the database."""
@@ -68,6 +69,7 @@ async def health_check():
         raise HTTPException(status_code=503, detail="Service Unavailable")
 
 
+# Get the authorization page with the form for entering username and password, and also with the flash message if there is an error during the previous authorization attempt 
 @app.get("/", tags=["Communicator", "auth"], summary="Communicator auth page")
 async def auth_page(request: Request, flash_msg: str | None = Cookie(None), i18n_data: dict = Depends(lambda: load_internationalization_data(BASE_DIR, settings.language))):
     data = {"flash_msg": flash_msg} if flash_msg else {}
@@ -77,11 +79,13 @@ async def auth_page(request: Request, flash_msg: str | None = Cookie(None), i18n
     return response
 
 
+# Get the registration page
 @app.get("/users/reg", tags=["Communicator", "new user"], summary="Communicator new user registration page")
 async def regstration_page(request: Request, i18n_data: dict = Depends(lambda: load_internationalization_data(BASE_DIR, settings.language))):
     return templates.TemplateResponse("reg.html", {"request": request, **i18n_data})
 
 
+# Get the messages page (a single-page application that receives all the data for a given application via asynchronous requests to the FastApi backend and updates the page dynamically without reloading) 
 @app.get("/messages", tags=["Communicator", "home page", "messages list"], summary="Welcome to the our communicator home page")
 async def messages_page(session: SessionDep, request: Request, current_user: UserInfo = Depends(get_current_user), i18n_data: dict = Depends(lambda: load_internationalization_data(BASE_DIR, settings.language))):
     how_much: int = await how_much_messages(session)
@@ -89,6 +93,7 @@ async def messages_page(session: SessionDep, request: Request, current_user: Use
     return templates.TemplateResponse("messages.html", {"request": request, **data, **i18n_data})
 
 
+# Get all messages with their authors and info about how many users read and liked each message
 @app.get("/messages/get_messages/{id}", tags=["Communicator", "get messages"], summary="Get all the messages")
 async def messages(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     result: Result[Any]
@@ -117,6 +122,7 @@ async def messages(id: int, session: SessionDep, current_user: UserInfo = Depend
     return result.mappings().all()
 
 
+# Add a new message to the messages list
 @app.post("/messages/add",  tags=["Communicator", "new message"], summary="Add a new message")
 async def add_message(new_message: Message, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
         clean_text = bleach.clean(new_message.messtext, tags=['b', 'i'], strip=True)
@@ -132,7 +138,8 @@ async def add_message(new_message: Message, session: SessionDep, current_user: U
             return {"result": "error"}       
 
 
-
+# Create a new user with the registration form data, checking the password confirmation and the uniqueness of the username, 
+# setting error message in cookie and redirecting to the auth page if something is wrong, otherwise - creating a new user, his token and redirecting to the messages page
 @app.post("/users/add",  tags=["Communicator", "new user"], summary="Add a new user")
 async def add_user(new_user: Annotated[NewUser, Form()], session: SessionDep):
     if (new_user.password1 == new_user.password2):
@@ -153,6 +160,7 @@ async def add_user(new_user: Annotated[NewUser, Form()], session: SessionDep):
         return response
 
 
+# User authorization and token generation, setting http-only cookie with the token and redirecting to the messages page if authorization is successful, otherwise - redirecting to the auth page with error message in cookie
 @app.post("/users/auth",  tags=["Communicator", "user authorization"], summary="๊")
 async def user_auth(user: Annotated[User, Form()], session: SessionDep):
     userid = await check_user(user.username, user.password, session) 
@@ -203,6 +211,7 @@ async def message_like(like: MessId, session: SessionDep, current_user: UserInfo
         return {"result": "User is not authorized"}
 
 
+# Get the list of all users with their activity status (active/inactive) and fio for the personal messages page
 @app.get("/users/get_activity", tags=["Communicator", "users", "activity"], summary="Get list of the activ users")
 async def get_users_activity(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     sql = text("SELECT u.userid, u.username, u.active, u.fio FROM users u ORDER BY u.username") 
@@ -210,6 +219,7 @@ async def get_users_activity(session: SessionDep, current_user: UserInfo = Depen
     return result.mappings().all()
 
 
+# Get the first message id in the database to set the starting point for loading messages on the client side
 @app.get("/messages/first_id", tags=["Communicator", "messages", "first id"], summary="the first message id")
 async def first_id(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     sql = text("SELECT MIN(m.id) as id FROM messages m") 
@@ -221,6 +231,7 @@ async def first_id(session: SessionDep, current_user: UserInfo = Depends(get_cur
         return {"first_id": 1}
 
 
+# Upload the attachment file and add the message with the file link to the messages list
 @app.post("/upload-attachment/", tags=["Communicator", "files", "upload"], summary="attachment files uploading")
 async def upload_file(session: SessionDep, file: UploadFile = File(...), current_user: UserInfo = Depends(get_current_user)):
     result = await save_user_file_to_disk(current_user.username, UPLOAD_DIR, file)
@@ -250,7 +261,7 @@ async def upload_file(session: SessionDep, file: UploadFile = File(...), current
         return result 
 
 
-# Скачать файл из сообщения (ранее загруженный файл)
+# Download the attachment file
 @app.get("/download-attachment/{id}", tags=["Communicator", "files", "download"], summary="download the attachment file")
 async def download_file(session: SessionDep, id: int, current_user: UserInfo = Depends(get_current_user)):
     sql = text("SELECT B.origname, B.filename FROM attachments B WHERE B.mess_id=:id LIMIT 1")
@@ -268,6 +279,7 @@ async def download_file(session: SessionDep, id: int, current_user: UserInfo = D
     else:
         return {"error": ERROR_MESSAGES_EN.get("file_not_found","File not found") if settings.language == "en" else ERROR_MESSAGES_RU.get("file_not_found","Файл не найден")}
 
+# Get the previous messages based on the message id (for infinite scroll implementation on the client side)
 @app.get("/messages/get_prev/{id}", tags=["Communicator", "messages history"], summary="Get all the previous messages")
 async def prev_messages(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     sql = text("""
@@ -281,6 +293,7 @@ async def prev_messages(id: int, session: SessionDep, current_user: UserInfo = D
     return result.mappings().all()  
 
 
+# Get the number of reads and likes for the messages and also the information if the message is unread for the current user to warn that user (unread - if the message was created in the last 24 hours, user is not the author of the message and user did not read this message)
 @app.get("/messages/conditions", tags=["Communicator", "mess. conditions"], summary="Get all the reads and likes")
 async def conditions(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     sql = text("""
@@ -294,6 +307,7 @@ async def conditions(session: SessionDep, current_user: UserInfo = Depends(get_c
     return result.mappings().all()  
 
 
+# Get the list of all users to fill the select element with the users in the new task form
 @app.get("/users/get_users", tags=["Communicator", "users"], summary="Get list of the users")
 async def get_userslist(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     sql = text("SELECT u.userid, u.username FROM users u ORDER BY u.username") 
@@ -301,6 +315,7 @@ async def get_userslist(session: SessionDep, current_user: UserInfo = Depends(ge
     return result.mappings().all()  
 
 
+# Get all active tasks with all their comments and info about expired tasks
 @app.get("/tasks/get_tasks", tags=["Communicator", "tasks"], summary="Get all active tasks")
 async def get_tasks(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     sql = text("""
@@ -320,6 +335,7 @@ async def get_tasks(session: SessionDep, current_user: UserInfo = Depends(get_cu
     return result.mappings().all()  
 
 
+# Get data for Gantt diagram
 @app.get("/tasks/gant", tags=["Communicator", "tasks"], summary="Get all active tasks")
 async def get_diagram_data(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     sql = text("""SELECT t.id, DATE(t.created_at) - CURRENT_DATE as startcol, DATE(t.deadline) - CURRENT_DATE as endcol, t.title, to_char(t.deadline, 'DD.MM.YYYY') as deadline, 
@@ -330,6 +346,7 @@ async def get_diagram_data(session: SessionDep, current_user: UserInfo = Depends
     return result.mappings().all()  
 
 
+# Add a new task based on the message text 
 @app.post("/tasks/add",  tags=["Communicator", "new task"], summary="Add a new task")
 async def add_task(new_task: Tasks, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     logger.info("Adding new task with id: " + str(new_task.id))
@@ -355,6 +372,7 @@ async def add_task(new_task: Tasks, session: SessionDep, current_user: UserInfo 
         return {"result": "Source message was not found"}
 
 
+# Close the task (only for the task creator)
 @app.delete("/tasks/close/{id}", tags=["Communicator", "tasks", "close"], summary="close the task")
 async def close_task(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     sql = text("DELETE FROM tasks WHERE id=:id") 
@@ -363,6 +381,7 @@ async def close_task(id: int, session: SessionDep, current_user: UserInfo = Depe
     return {"result": "ok"}
     
 
+# Edit the task description (only for the task creator)
 @app.post("/tasks/edit", tags=["Communicator", "tasks", "close"], summary="close the task")
 async def edit_task(task: TaskEdit, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     new_text = bleach.clean(task.messtext)
@@ -375,6 +394,7 @@ async def edit_task(task: TaskEdit, session: SessionDep, current_user: UserInfo 
         return {"result": "error", "details": "denied"}
 
 
+# Edit the task deadline (only for the task creator)
 @app.post("/tasks/deadline/edit", tags=["Communicator", "tasks", "close"], summary="close the task")
 async def edit_deadline(deadline: DeadlineEdit, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     if (current_user.userid == deadline.userid):
@@ -386,6 +406,7 @@ async def edit_deadline(deadline: DeadlineEdit, session: SessionDep, current_use
         return {"result": "error", "details": "denied"}
 
 
+# Add a new personal message to the personal messages list for the current user
 @app.post("/messages/send_personal",  tags=["Communicator", "personal"], summary="send personal message")
 async def add_personal_message(message: Message, current_user: UserInfo = Depends(get_current_user)):
     messText = bleach.clean(message.messtext, tags=['b', 'i'], strip=True)
@@ -398,11 +419,13 @@ async def add_personal_message(message: Message, current_user: UserInfo = Depend
         return {"result": "duplicated message"}
     
 
+# Get all personal messages for the current user
 @app.get("/messages/get_personal", tags=["Communicator", "personal"], summary="get personal message")    
 async def get_personal_message(current_user: UserInfo = Depends(get_current_user)):
     return get_personal_messages(current_user.userid)
 
 
+# Delete a message and its associated files
 @app.delete("/messages/delete/{id}", tags=["Communicator", "message", "delete"], summary="delete message")
 async def del_message(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     sql = text("SELECT a.filename FROM attachments a WHERE a.mess_id=:mess_id AND NOT EXISTS(SELECT 1 FROM documents d WHERE d.mess_id=a.mess_id) LIMIT 1")
@@ -427,6 +450,7 @@ async def del_message(id: int, session: SessionDep, current_user: UserInfo = Dep
     return {"result": "ok"}
 
 
+# Delete a document from the important documents list
 @app.delete("/documents/delete/{id}", tags=["Communicator", "documents", "delete"], summary="delete document")
 async def del_document(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     sql = text("SELECT a.savedname as filename FROM documents a WHERE a.mess_id=:mess_id AND NOT EXISTS(SELECT 1 FROM attachments b WHERE b.mess_id=a.mess_id) LIMIT 1")
@@ -449,12 +473,15 @@ async def del_document(id: int, session: SessionDep, current_user: UserInfo = De
     return {"result": "ok"}
 
 
+# Get all the important documents list
 @app.get("/documents/get", tags=["Communicator", "documents", "get all"], summary="get all the documents")
 async def get_ducuments(session: SessionDep, currnet_user: UserInfo = Depends(get_current_user)):
     result = await session.execute(text('SELECT mess_id, filename, notes FROM documents ORDER BY created_at'))
     return result.mappings().all()
 
 
+
+# Add a new document to the important documents list
 @app.post("/documents/add",  tags=["Communicator", "documents", "add"], summary="Add a new document")
 async def add_document(new_doc: Docs, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     sql = text("SELECT A.filename, A.origname FROM attachments A WHERE A.mess_id=:mess_id LIMIT 1")
@@ -477,7 +504,7 @@ async def add_document(new_doc: Docs, session: SessionDep, current_user: UserInf
             return {"result": "error"}
 
 
-# Скачать файл из хранилища важных документов
+# Download the file from important document lists\s item  
 @app.get("/documents/download/{id}", tags=["Communicator", "files", "download"], summary="download the attachment file")
 async def get_document_file(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     sql = text("SELECT A.filename, A.savedname FROM documents A WHERE A.mess_id=:mess_id LIMIT 1")
@@ -488,7 +515,7 @@ async def get_document_file(id: int, session: SessionDep, current_user: UserInfo
   
 
 
-# добавляем описание документа
+# add the document\s description\notes, which will be visible in the important documents list
 @app.post("/documents/add_notes", tags=["Communicator", "documents", "add_notes"], summary="add notes to the document")
 async def add_doc_description(descr: DocsNotes, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     sql = text("""UPDATE documents SET notes=:notes WHERE mess_id=:mess_id""")

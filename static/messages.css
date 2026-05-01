@@ -946,9 +946,10 @@ body.dark-theme .sun {
   .scroll-container { max-height: calc(100vh - 350px); }
 
   #due_date { width: 89%; } 
+  
   .makeTaskDiv {
     width: 80%;
-    left: calc(100% / 2 - 170px);
+    left: calc(100% / 2 - 160px);
     min-height: 400px;
     margin-left: 4px;
   }
