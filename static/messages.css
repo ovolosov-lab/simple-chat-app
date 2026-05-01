@@ -741,6 +741,7 @@ body.dark-theme .sun {
 .users { height: 100px; } 
 .our-tasks { margin-top:25px; max-height: calc(100vh - 315px); height:calc(100vh - 270px); padding-bottom: 0; margin-bottom: 0;}
 
+.deadline { cursor: pointer; }
 
 /* Надпись на границе */
 .nice-list-title {
@@ -874,9 +875,9 @@ body.dark-theme .sun {
     font-family: inherit;
     font-size: 1rem;
     padding: 12px 16px;
-    border-radius: 8px; /* Скругленные углы — мастхэв */
+    border-radius: 8px; 
     border: 1px solid #ddd;
-    transition: all 0.3s ease; /* Плавность при клике */
+    transition: all 0.3s ease; 
     outline: none;
     display: block;
     width: 100%;
@@ -886,7 +887,21 @@ body.dark-theme .sun {
       max-width: 99.7%;
   }
 
+  #edit_deadline {
+    font-size: 1rem;
+    padding: 12px 16px;
+    border-radius: 8px; 
+    border: 1px solid #ddd;
+    transition: all 0.3s ease; 
+    outline: none;
+    display: block;
+    margin-top: 10px;
+  }
+
   @media (max-width: 768px) {
+    .task_title_span {
+      max-width:220px;
+    }  
     .fileUploadDiv {
       padding-right:10px;
     }
@@ -905,6 +920,9 @@ body.dark-theme .sun {
     #respons {
       min-width: 99.8%;
     }
+    #notesDlg textarea { 
+      width: 95%;
+    }  
   }  
 
   H3 { margin:0; padding:0; margin-bottom:10px; color:#01197a; padding-left: 5px; }
@@ -929,7 +947,7 @@ body.dark-theme .sun {
 
   #due_date { width: 89%; } 
   .makeTaskDiv {
-    width: 90%;
+    width: 80%;
     left: calc(100% / 2 - 170px);
     min-height: 400px;
     margin-left: 4px;
@@ -1070,6 +1088,7 @@ body.dark-theme .content_editable_block {
 
 .show-diagram {
   font-size:0.8rem;
+  margin-left:5px;
 }
 
 
@@ -1110,7 +1129,7 @@ dialog {
   overflow: auto;
   min-width: 690px;
   min-height: 390px;
-  max-width: 690px;
+  max-width: 800px;
   max-height: 390px;  
   border: #999999 solid 1px;
   border-radius:8px;
@@ -1261,6 +1280,7 @@ dialog::backdrop {
 .document-filename {
   font-size: 1.0rem;
   padding-top: 8px;
+  margin-left:15px;
 }
 .docs_notes {
   padding-top:15px;
@@ -1281,6 +1301,7 @@ dialog::backdrop {
   border-radius: 20px;
   padding: 0 0 6px 6px;
   margin-top: 8px;
+  min-width: 18px;
 }
 
 #userDlg input { 
@@ -1368,7 +1389,45 @@ dialog::backdrop {
   min-width: 80%;
 }
 
+.button-flex{
+  display: flex;
+  flex-direction: row-reverse;
+}
+
 @media (max-width: 768px) {
   .one-document { padding-right: 0; }
+
+  #diagramDlg {
+        width: 100dvh;
+        height: 100dvw;
+        max-height:100dvw !important;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(90deg);
+        margin: 0;
+        max-width: none;
+        max-height: none;
+        border: none;
+  }
+
+  #diagramDlg .mobile-flex {
+      display: flex !important;
+      flex-direction: column;
+      justify-content: space-between;         
+  }
+  #diagramDlg .gant-parent {
+    max-width: 760px;
+  }
+
+  #close_diagram_btn {
+    max-width:140px;
+    align-self: center;  
+    transform: translate(270%, -250%) rotate(-90deg);
+  }
+  .Gant div {
+    font-size: 0.8rem;
+}
+
 }  
 

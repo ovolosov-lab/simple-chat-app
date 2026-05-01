@@ -39,7 +39,9 @@ ERROR_MESSAGES_RU = {
     "comment_deleted": "Комментарий успешно удален",
     "comment_not_found": "Комментарий не найден",
     "user_info_updated": "Информация о пользователе успешно обновлена",
-    "user_info_update_error": "Произошла ошибка при попытке обновить информацию о пользователе"
+    "user_info_update_error": "Произошла ошибка при попытке обновить информацию о пользователе",
+    "You are not authorized": "Вы не авторизованы", 
+    "date_in_past": "Дата не может быть в прошлом"
 }
 
 ERROR_MESSAGES_EN = {
@@ -78,6 +80,8 @@ ERROR_MESSAGES_EN = {
     "comment_not_found": "Comment not found",
     "user_info_updated": "User info successfully updated",
     "user_info_update_error": "Error occurred while trying to update user info",
+    "You are not authorized": "You are not authorized",
+    "date_in_past": "Date cannot be in the past"
 }   
 
 

@@ -2,7 +2,7 @@ from typing import Annotated
 
 from annotated_types import Gt, MaxLen, MinLen
 from fastapi import types
-from pydantic import AfterValidator, BaseModel
+from pydantic import AfterValidator, BaseModel, field_validator
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -124,13 +124,32 @@ class Tasks(BaseModel):
     id: Annotated[int, Gt(0)]
     creator: Annotated[int, Gt(0)]
     respons: Annotated[int, Gt(0)]
-    deadline: date  
+    deadline: date
     title: Annotated[str, MinLen(3), MaxLen(255)] 
+
+    @field_validator('deadline')
+    @classmethod
+    def prevent_past_dates(cls, v: date) -> date:
+        if v < date.today():
+            raise ValueError('date_in_past')
+        return v 
 
 class TaskEdit(BaseModel):
     id: Annotated[int, Gt(0)]
     userid: Annotated[int, Gt(0)]
     messtext: Annotated[str, AfterValidator(str.strip), MinLen(1), MaxLen(2000)]
+
+class DeadlineEdit(BaseModel):
+    id: Annotated[int, Gt(0)]
+    userid: Annotated[int, Gt(0)]
+    deadline: date
+
+    @field_validator('deadline')
+    @classmethod
+    def prevent_past_dates(cls, v: date) -> date:
+        if v < date.today():
+            raise ValueError('date_in_past')
+        return v    
 
 class UserFio(BaseModel):
     userid: Annotated[int, Gt(0)]  

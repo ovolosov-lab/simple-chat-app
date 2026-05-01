@@ -108,6 +108,12 @@
     <div><button id="pers_send_btn">{{pers_send_btn}}</button> <button id="pers_cancel">{{pers_cancel}}</button></div>
 </dialog>
 
+<dialog id="deadline_Dialog" data-id="0">
+    <div id="deadline_header" class="lsh">{{deadline_header}}</div>
+    <div><input id="edit_deadline" type="date" value="" required></div>
+    <div><button id="deadline_confirm">{{task_dlg_confirm_btn}}</button> <button id="deadline_cancel">{{task_dlg_cancel_btn}}</button></div>
+</dialog>
+
 <dialog id="showPersDlg">
     <h3 id="show_pers_mess_header">{{show_pers_mess_header}}</h3>
     <p id="personal_message_text"> </p>
@@ -147,10 +153,12 @@
 </dialog>
 
 <dialog id="diagramDlg">
+    <div class="mobile-flex">
     <div id="GantParent" class="gant-parent">
         <div id="Gant" class="Gant"> </div>
     </div>
     <button id="close_diagram_btn">{{closeSP_btn}}</button>
+    </div>
 </dialog>
 
 <div id="custom-menu" class="context-menu">
@@ -173,6 +181,7 @@
 
     const dialog = document.getElementById('myDialog');
     const save_confirm_dialog = document.getElementById('task_save_confirm_Dialog');
+    const deadlineDialog = document.getElementById('deadline_Dialog');
     const deleteDlg = document.getElementById('deleteDlg');
     const pers_messInput = document.getElementById('pers_messtext');
     const pers_dlg = document.getElementById('personal_Dialog');
@@ -711,7 +720,7 @@
 
 
 
-    // Обработка отправки формы message-form
+    // Обработка отправки формы нового сообщения  "message-form"
     document.getElementById('message-form').onsubmit = async (e) => {
         e.preventDefault();
         if (e.submitter != document.getElementById("attach_file_btn")) {
@@ -1022,7 +1031,7 @@
                 if (tasksDocsBtn.dataset.action == 'tasks') {
                     fetchTasks();
                 }
-            } else if ((!clickedElement.closest('#sliding-panel')) && (!notesDlg.open)) {
+            } else if ((!clickedElement.closest('#sliding-panel')) && (!notesDlg.open) && (!deadlineDialog.open) && (!save_confirm_dialog.open)) {
                 if (sl_pan.classList.contains("panel-opened")) {     //  закрыть открытую ранее дополнительную панель (sliding panel)
                     searchInput.classList.remove('si_active');
                     sl_pan.classList.remove('panel-opened');    
@@ -1030,7 +1039,7 @@
                     tasksDiv.classList.remove("taskDiv_opened");
                 }          
             }    
-        } else if ((!clickedElement.closest('#chat-header')) && (clickedElement.tagName != "A") && (!notesDlg.open)) {
+        } else if ((!clickedElement.closest('#chat-header')) && (clickedElement.tagName != "A") && (!notesDlg.open) && (!deadlineDialog.open) && (!save_confirm_dialog.open)) {
             if ( sl_pan.classList.contains('panel-opened') ) {
                 searchInput.classList.remove('si_active');
                 sl_pan.classList.remove('panel-opened');
@@ -1106,16 +1115,18 @@
             } 
             const div = document.createElement('div');
 
+            let dTitle = "";
             let tmp0 = "";
             if (task.creator == userName) {
                 tmp0 = `<div class="close-task" onclick="closeTask(${task.id})"> {{closeTaskButton}} </div>`;
+                dTitle = "You can change it";
             } else {
                 tmp0 = `<div class="close-task disabled"> {{closeTaskButton}} </div>`;
             }
 
             let tmpHtml = `<span class="task_header">{{task_created_at}}: <b>${task.created_at}</b> <div class="task_title"><span class="task_title_span">${task.title}</span></div></span>
                        <span class="task_header">{{task_owner}}: <b>${task.creator}</b></span>
-                       <span class="task_header"><span>{{task_deadline}}: <b>${task.deadline}</b></span> ${tmp0}</span>
+                       <span class="task_header"><span id="deadline_${task.id}" onclick="edit_deadline(${task.id}, '${task.deadline}', '${task.creator}')" class="deadline" title='${dTitle}'>{{task_deadline}}: <b>${task.deadline}</b></span> ${tmp0}</span>
                        <span class="task_header">{{task_performer}}: <b>${task.respons}</b></span>
                        <hr class="task_header_line"/>
                        <div id="z_${task.id}" class="task_text${task_expired}" onclick="edit_task(${task.id}, '${task.creator}')" onfocusout="finish_task_edit(this)"  contenteditable="false">${task.description}</div>
@@ -1136,7 +1147,7 @@
         parentDiv.innerHTML = '';
         parentDiv.appendChild(fragment);
         const div = document.createElement('div');
-        div.innerHTML = `<div class="close-task show-diagram" onclick="showDiagram()"> {{show_diagram}} </div>`;
+        div.innerHTML = `<div class="button-flex"><div class="close-task show-diagram" onclick="showDiagram()"> {{show_diagram}} </div> &#128202;</div>`;
         parentDiv.appendChild(div);
     }
 
@@ -1155,12 +1166,6 @@
                             save_confirm_dialog.dataset.task_id = task_id;
                             task_div.classList.add("content_editable_block");
                             task_div.focus();
-                        /* } else {
-                            scroll_switch.checked = true;
-                            task_div.classList.remove("content_editable_block");
-                            task_div.contentEditable = "false";
-                            save_confirm_dialog.dataset.task_id = task_id;
-                            save_confirm_dialog.showModal(); */
                         }
                     }
                     event.stopPropagation();
@@ -1648,6 +1653,42 @@
     }
 
     document.getElementById('close_diagram_btn').addEventListener('click', () => { diagramDlg.close(); });
+
+
+    // Edit Task Deadline in dialog
+    function edit_deadline(task_id, dDate, creator) {
+        if (creator == '{{username}}') {
+            event.preventDefault();
+            const dEdit = document.getElementById('edit_deadline');
+            dEdit.value = dDate.substring(6,10)+'-'+dDate.substring(3,5)+'-'+dDate.substring(0,2);
+            deadlineDialog.dataset.id = task_id;
+            document.getElementById('deadline_cancel').addEventListener('click', (e) => { deadlineDialog.close(); e.stopPropagation(); });
+            document.getElementById('deadline_confirm').addEventListener('click', async (e) => {
+                let new_data = dEdit.value;
+                document.getElementById('deadline_'+task_id).innerHTML = "{{task_deadline}}: <b style='color:#128256'>"+new_data+"</b>";
+                try {
+                    const response = await fetch('/tasks/deadline/edit', {
+                        method: "POST",
+                        headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                        credentials: 'include',
+                        body: JSON.stringify({ 
+                            id: parseInt(task_id),
+                            userid: parseInt('{{userid}}'),
+                            deadline: dEdit.value
+                        })                        
+                    }); 
+                    const data = await response.json(); 
+                    console.log(`Task id=${task_id} deadline edited - Server response:`, data);
+                } catch (error) {
+                    console.error('Task deadline editing error:', error);
+                    tasksDiv.classList.remove("taskDiv_opened");
+                } 
+                e.stopPropagation(); 
+                deadlineDialog.close();               
+            });
+            deadlineDialog.showModal();
+        }
+    }
 </script>
 </body>
 </html>
