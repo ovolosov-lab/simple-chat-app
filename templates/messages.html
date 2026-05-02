@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
@@ -9,774 +10,791 @@
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
     <link href="/static/messages.css" rel="stylesheet">
 </head>
+
 <body>
-<div class="chat-container">
-    <div class="chat-header header" id="chat-header">
-        <div class="switch-container">
-            <label class="switch">
-                <input type="checkbox" id="isScroll" checked><span class="slider"></span>
-            </label>
-            <div id="switch-label" class="switch-label">{{switch_label}}</div>
-        </div>
-        <div id="app-name" title="{{chat_header_title}}">{{app_name}}</div>
-        <div class="someclass whitebg" id="user_name" onclick="show_user_dialog()">{{username}}</div>
-        
-        <div class="sliding-panel" id="sliding-panel">
-            <div class="zag"> 
-            <input type="text" id="searchInput" class="search-input" placeholder="{{searchInput_placeholder}}">
-            <button id="searchBtn" class="search-button" title="{{searchBtn}}">&#128269;
-                <!-- 
+    <div class="chat-container">
+        <div class="chat-header header" id="chat-header">
+            <div class="switch-container">
+                <label class="switch">
+                    <input type="checkbox" id="isScroll" checked><span class="slider"></span>
+                </label>
+                <div id="switch-label" class="switch-label">{{switch_label}}</div>
+            </div>
+            <div id="app-name" title="{{chat_header_title}}">{{app_name}}</div>
+            <div class="someclass whitebg" id="user_name" onclick="show_user_dialog()">{{username}}</div>
+
+            <div class="sliding-panel" id="sliding-panel">
+                <div class="zag">
+                    <input type="text" id="searchInput" class="search-input" placeholder="{{searchInput_placeholder}}">
+                    <button id="searchBtn" class="search-button" title="{{searchBtn}}">&#128269;
+                        <!-- 
                 <svg xmlns="http://w3.org" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="20" y1="20" x2="16.65" y2="16.65"></line>
                 </svg>  -->
-            </button>            
-            <button id="tasks_docs" class="up-button up-btn-text" title="{{tasks_docs_title}}" data-action="tasks">
-                &#128220;  
-            </button>
-            <button id="get_history_btn" class="up-button" title="{{get_history_btn_title}}">
-                <img src='/static/arrow.png' height='20px' width='20px'/>
-            </button>
-            <button id="light_dark" class="theme-toggle" title="{{light_dark_title}}">
-                <!-- the Moon (show in light theme) -->
-                <svg class="moon" xmlns="http://w3.org" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                </svg>                
-                <!-- the Sun (show in dark theme) -->
-                <svg class="sun" xmlns="http://w3.org" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="5"></circle>
-                    <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                    <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                </svg>             
-            </button>    
-            </div>
-  
-            <div class="spisok" id="lists_container01">
-                <div class="nice-list"> 
-                    <span id="users-list-title" class="nice-list-title">{{users_list_title}}</span>
-                    <div class="scroll-container" id="activ_users_list"> </div> 
-                </div>                   
-                <div class="nice-list our-tasks">
-                    <span id="nice-list-header" class="nice-list-title">{{nice_list_header}}</span>
-                    <div class="scroll-container" id="task-list"> </div>
-                </div>                
+                    </button>
+                    <button id="tasks_docs" class="up-button up-btn-text" title="{{tasks_docs_title}}"
+                        data-action="tasks">
+                        &#128220;
+                    </button>
+                    <button id="get_history_btn" class="up-button" title="{{get_history_btn_title}}">
+                        <img src='/static/arrow.png' height='20px' width='20px' />
+                    </button>
+                    <button id="light_dark" class="theme-toggle" title="{{light_dark_title}}">
+                        <!-- the Moon (show in light theme) -->
+                        <svg class="moon" xmlns="http://w3.org" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                        <!-- the Sun (show in dark theme) -->
+                        <svg class="sun" xmlns="http://w3.org" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="spisok" id="lists_container01">
+                    <div class="nice-list">
+                        <span id="users-list-title" class="nice-list-title">{{users_list_title}}</span>
+                        <div class="scroll-container" id="activ_users_list"> </div>
+                    </div>
+                    <div class="nice-list our-tasks">
+                        <span id="nice-list-header" class="nice-list-title">{{nice_list_header}}</span>
+                        <div class="scroll-container" id="task-list"> </div>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <div id="messages-list"></div>
+
+        <form id="message-form">
+            <div class="chat-input-area">
+                <input type="hidden" name="userid" id="userid" value="{{userid}}">
+                <textarea id="messtext_inp" name="messtext" placeholder="{{messtext_input_placeholder}}" required
+                    maxlength="2000"> </textarea>
+                <button id="send_message_btn" type="submit" class="send-btn"
+                    title="{{send_message_btn_title}}">&#9654;</button>
+                <button id="attach_file_btn" type="button" class="send-btn light"
+                    title="{{attach_file_btn_title}}">&#128206;</button>
+            </div>
+        </form>
+
     </div>
-    
-    <div id="messages-list"></div>
 
-    <form id="message-form">
-     <div class="chat-input-area">      
-        <input type="hidden" name="userid" id="userid" value="{{userid}}">
-        <textarea id="messtext_inp" name="messtext" placeholder="{{messtext_input_placeholder}}" required maxlength="2000"> </textarea>
-        <button id="send_message_btn" type="submit" class="send-btn" title="{{send_message_btn_title}}">&#9654;</button>
-        <button id="attach_file_btn" type="button" class="send-btn light" title="{{attach_file_btn_title}}">&#128206;</button>   
-     </div>  
-    </form>
- 
-</div>
-
-<div id="makeTaskDiv" class=""> 
-    <h3 id="new_task_h3">{{new_task_h3}}</h3>
-    <form name="task_form" id="task_form">
-        <label for="task_title_inp" class="taskLabel">{{task_title_label}}</label>
-        <input type="text" name="task_title_inp" id="task_title_inp" class="respons" required>
-        <label for="respons" class="taskLabel">{{respons_label}}</label>
-        <select name="respons" id="respons" class="respons" required>     
-        </select>
-        <label for="due_date" class="taskLabel">{{due_date_label}}</label>
-        <input type="date" name="due_date" id="due_date" class="respons" required>
-        <input type="hidden" value="" name="task_id" id="task_id">
-        <input type="hidden" name="taskCreator" id="taskCreator" value="{{userid}}">    
-        <button type="submit" name="makeTask" id="makeTaskBtn" class="taskButton">{{makeTaskBtn}}</button>
-        <button type="button" onclick="closeTaskDiv()" id="closeTaskWindow" class="taskButton">{{closeTaskWindow}}</button>  
-    </form>
-</div>  
-
-<dialog id="myDialog">
-    <p id="myDialog_question">{{myDialog_question}}</p>
-    <button id="cancel">{{task_dlg_cancel_btn}}</button>
-    <button id="confirm">{{task_dlg_confirm_btn}}</button>
-</dialog>
-
-<dialog id="personal_Dialog">
-    <div id="pers_mess_header" class="lsh">{{pers_mess_header}}</div>
-    <div><textarea id="pers_messtext" maxlength="1000" rows="5" cols="40" placeholder="{{pers_messtext_placeholder}}"> </textarea></div>
-    <div><button id="pers_send_btn">{{pers_send_btn}}</button> <button id="pers_cancel">{{pers_cancel}}</button></div>
-</dialog>
-
-<dialog id="deadline_Dialog" data-id="0">
-    <div id="deadline_header" class="lsh">{{deadline_header}}</div>
-    <div><input id="edit_deadline" type="date" value="" required></div>
-    <div><button id="deadline_confirm">{{task_dlg_confirm_btn}}</button> <button id="deadline_cancel">{{task_dlg_cancel_btn}}</button></div>
-</dialog>
-
-<dialog id="showPersDlg">
-    <h3 id="show_pers_mess_header">{{show_pers_mess_header}}</h3>
-    <p id="personal_message_text"> </p>
-    <div><button id="closeSP_btn">{{closeSP_btn}}</button></div>
-</dialog>
-
-<dialog id="deleteDlg">
-    <p>{{delete_message_question}}</p>
-    <button id="del_cancel">{{del_cancel}}</button>
-    <button id="del_confirm">{{del_confirm}}</button>
-</dialog>
-
-<dialog id="notesDlg">
-    <p>{{add_description_title}}</p>
-    <div><textarea id="description" maxlength="1000" rows="5" cols="40" placeholder="{{description_placeholder}}"> </textarea></div>    
-    <button id="note_cancel">{{note_cancel}}</button>
-    <button id="note_confirm">{{note_confirm}}</button>
-</dialog>
-
-<dialog id="userDlg" data-userid="{{userid}}">
-    <p>{{userDlg_title}} ({{username}}):</p>
-    <div><input type="text" name="fio" id="fio" maxlength="100" placeholder="{{fio_placeholder}}" value=""></div>    
-    <button id="fio_cancel">{{fio_cancel}}</button>
-    <button id="fio_confirm">{{fio_confirm}}</button>
-</dialog>
-
-<dialog id="file_upload_block" class="fileUploadDiv" data-filename="">  
-    <input type="file" id="fileInput" placeholder="{{fileInput_placeholder}}" on style="height:20px;">
-    <div><button id="upload_btn" class="blue-button">{{upload_btn}}</button> <button onclick="closeUploadDialog()" class="blue-button">{{close_file_btn}}</button></div>
-    <p id="status"></p>
-</dialog>   
-
-<dialog id="task_save_confirm_Dialog">
-    <p id="myDialog_question">{{task_save_confirm_question}}</p>
-    <button id="save_cancel_btn">{{task_dlg_cancel_btn}}</button>
-    <button id="save_confirm_btn">{{task_dlg_confirm_btn}}</button>
-</dialog>
-
-<dialog id="diagramDlg">
-    <div class="mobile-flex">
-    <div id="GantParent" class="gant-parent">
-        <div id="Gant" class="Gant"> </div>
+    <div id="makeTaskDiv" class="makeTaskDiv">
+        <h3 id="new_task_h3">{{new_task_h3}}</h3>
+        <form name="task_form" id="task_form">
+            <label for="task_title_inp" class="taskLabel">{{task_title_label}}</label>
+            <input type="text" name="task_title_inp" id="task_title_inp" class="respons" required>
+            <label for="respons" class="taskLabel">{{respons_label}}</label>
+            <select name="respons" id="respons" class="respons" required>
+            </select>
+            <label for="due_date" class="taskLabel">{{due_date_label}}</label>
+            <input type="date" name="due_date" id="due_date" class="respons" required>
+            <input type="hidden" value="" name="task_id" id="task_id">
+            <input type="hidden" name="taskCreator" id="taskCreator" value="{{userid}}">
+            <button type="submit" name="makeTask" id="makeTaskBtn" class="taskButton">{{makeTaskBtn}}</button>
+            <button type="button" onclick="closeTaskDiv()" id="closeTaskWindow"
+                class="taskButton">{{closeTaskWindow}}</button>
+        </form>
     </div>
-    <button id="close_diagram_btn">{{closeSP_btn}}</button>
+
+    <dialog id="myDialog">
+        <p id="myDialog_question">{{myDialog_question}}</p>
+        <button id="cancel">{{task_dlg_cancel_btn}}</button>
+        <button id="confirm">{{task_dlg_confirm_btn}}</button>
+    </dialog>
+
+    <dialog id="personal_Dialog">
+        <div id="pers_mess_header" class="lsh">{{pers_mess_header}}</div>
+        <div><textarea id="pers_messtext" maxlength="1000" rows="5" cols="40"
+                placeholder="{{pers_messtext_placeholder}}"> </textarea></div>
+        <div><button id="pers_send_btn">{{pers_send_btn}}</button> <button id="pers_cancel">{{pers_cancel}}</button>
+        </div>
+    </dialog>
+
+    <dialog id="deadline_Dialog" data-id="0">
+        <div id="deadline_header" class="lsh">{{deadline_header}}</div>
+        <div><input id="edit_deadline" type="date" value="" required></div>
+        <div><button id="deadline_confirm">{{task_dlg_confirm_btn}}</button> <button
+                id="deadline_cancel">{{task_dlg_cancel_btn}}</button></div>
+    </dialog>
+
+    <dialog id="showPersDlg">
+        <h3 id="show_pers_mess_header">{{show_pers_mess_header}}</h3>
+        <p id="personal_message_text"> </p>
+        <div><button id="closeSP_btn">{{closeSP_btn}}</button></div>
+    </dialog>
+
+    <dialog id="deleteDlg">
+        <p>{{delete_message_question}}</p>
+        <button id="del_cancel">{{del_cancel}}</button>
+        <button id="del_confirm">{{del_confirm}}</button>
+    </dialog>
+
+    <dialog id="notesDlg">
+        <p>{{add_description_title}}</p>
+        <div><textarea id="description" maxlength="1000" rows="5" cols="40"
+                placeholder="{{description_placeholder}}"> </textarea></div>
+        <button id="note_cancel">{{note_cancel}}</button>
+        <button id="note_confirm">{{note_confirm}}</button>
+    </dialog>
+
+    <dialog id="userDlg" data-userid="{{userid}}">
+        <p>{{userDlg_title}} ({{username}}):</p>
+        <div><input type="text" name="fio" id="fio" maxlength="100" placeholder="{{fio_placeholder}}" value=""></div>
+        <button id="fio_cancel">{{fio_cancel}}</button>
+        <button id="fio_confirm">{{fio_confirm}}</button>
+    </dialog>
+
+    <dialog id="file_upload_block" class="fileUploadDiv" data-filename="">
+        <input type="file" id="fileInput" placeholder="{{fileInput_placeholder}}" on style="height:20px;">
+        <div><button id="upload_btn" class="blue-button">{{upload_btn}}</button> <button onclick="closeUploadDialog()"
+                class="blue-button">{{close_file_btn}}</button></div>
+        <p id="status"></p>
+    </dialog>
+
+    <dialog id="task_save_confirm_Dialog">
+        <p id="myDialog_question">{{task_save_confirm_question}}</p>
+        <button id="save_cancel_btn">{{task_dlg_cancel_btn}}</button>
+        <button id="save_confirm_btn">{{task_dlg_confirm_btn}}</button>
+    </dialog>
+
+    <dialog id="diagramDlg">
+        <div class="mobile-flex">
+            <div id="GantParent" class="gant-parent">
+                <div id="Gant" class="Gant"> </div>
+            </div>
+            <button id="close_diagram_btn">{{closeSP_btn}}</button>
+        </div>
+    </dialog>
+
+    <div id="custom-menu" class="context-menu">
+        <div data-action="read" class="menu-item">{{menu_item_read}}</div>
+        <div data-action="like" class="menu-item">{{menu_item_like}}</div>
+        <div data-action="task" class="menu-item">{{menu_item_task}}</div>
+        <div data-action="docs" class="menu-item">{{menu_item_docs}}</div>
+        <hr>
+        <div data-action="delete" class="menu-item">{{menu_item_delete}}</div>
     </div>
-</dialog>
 
-<div id="custom-menu" class="context-menu">
-  <div data-action="read" class="menu-item">{{menu_item_read}}</div>
-  <div data-action="like" class="menu-item">{{menu_item_like}}</div>
-  <div data-action="task" class="menu-item">{{menu_item_task}}</div>
-  <div data-action="docs" class="menu-item">{{menu_item_docs}}</div>
-  <hr>
-  <div data-action="delete" class="menu-item">{{menu_item_delete}}</div>
-</div>
+    <script>
+        let min_id = 0;
+        let firstId = 0;
+        let lastId = 0;
+        let isRight = false;
+        let task_id = 0;
+        let to_userid = 0;
+        let from_name = '';
 
-<script>
-    let min_id = 0;
-    let firstId = 0;
-    let lastId = 0;
-    let isRight = false;
-    let task_id = 0;
-    let to_userid = 0;
-    let from_name = '';
-
-    const dialog = document.getElementById('myDialog');
-    const save_confirm_dialog = document.getElementById('task_save_confirm_Dialog');
-    const deadlineDialog = document.getElementById('deadline_Dialog');
-    const deleteDlg = document.getElementById('deleteDlg');
-    const pers_messInput = document.getElementById('pers_messtext');
-    const pers_dlg = document.getElementById('personal_Dialog');
-    const pers_send_btn = document.getElementById('pers_send_btn');
-    const confirmButton = document.getElementById('confirm');
-    const cancelButton = document.getElementById('cancel');
-    const del_confirm = document.getElementById('del_confirm');
-    const del_cancel = document.getElementById('del_cancel');   
-    const note_confirm = document.getElementById('note_confirm');
-    const note_cancel = document.getElementById('note_cancel');   
-    const messagesList = document.getElementById('messages-list');
-    const scroll_switch = document.getElementById('isScroll');
-    const usersList = document.getElementById('activ_users_list');
-    const showPersDlg = document.getElementById('showPersDlg');
-    const closeSP_btn = document.getElementById('closeSP_btn');
-    const diagramDlg = document.getElementById('diagramDlg');
-    const pers_mess_text = document.getElementById('personal_message_text');
-    const pers_mess_header = document.getElementById('show_pers_mess_header');
-    const tasksDiv = document.getElementById("makeTaskDiv");
-    const menu = document.getElementById('custom-menu');
-    const tasksDocsBtn = document.getElementById('tasks_docs');
-    const notesDlg = document.getElementById('notesDlg');
-    const userDlg = document.getElementById('userDlg')
-    const userName = "{{username}}";
-    const textArea = document.getElementById('messtext_inp');
-    const searchBtn = document.getElementById('searchBtn');
-    const searchInput = document.getElementById('searchInput');      
-
-    
-    //  --------------------------------------------------------------
-    // Первоначальная загрузка сообщений и обновление каждые 3 секунды
-    set_minimal_id();
-    fetchMessages();
-    setInterval(fetchMessages, parseInt("{{messages_check_interval}}"));
-    setInterval(fetchActivUsers, parseInt("{{users_check_interval}}"));
-    fetchActivUsers(); 
-    set_userList();
-    // ----------------------------------------------------------------
+        const dialog = document.getElementById('myDialog');
+        const save_confirm_dialog = document.getElementById('task_save_confirm_Dialog');
+        const deadlineDialog = document.getElementById('deadline_Dialog');
+        const deleteDlg = document.getElementById('deleteDlg');
+        const pers_messInput = document.getElementById('pers_messtext');
+        const pers_dlg = document.getElementById('personal_Dialog');
+        const pers_send_btn = document.getElementById('pers_send_btn');
+        const confirmButton = document.getElementById('confirm');
+        const cancelButton = document.getElementById('cancel');
+        const del_confirm = document.getElementById('del_confirm');
+        const del_cancel = document.getElementById('del_cancel');
+        const note_confirm = document.getElementById('note_confirm');
+        const note_cancel = document.getElementById('note_cancel');
+        const messagesList = document.getElementById('messages-list');
+        const scroll_switch = document.getElementById('isScroll');
+        const usersList = document.getElementById('activ_users_list');
+        const showPersDlg = document.getElementById('showPersDlg');
+        const closeSP_btn = document.getElementById('closeSP_btn');
+        const diagramDlg = document.getElementById('diagramDlg');
+        const pers_mess_text = document.getElementById('personal_message_text');
+        const pers_mess_header = document.getElementById('show_pers_mess_header');
+        const tasksDiv = document.getElementById("makeTaskDiv");
+        const menu = document.getElementById('custom-menu');
+        const tasksDocsBtn = document.getElementById('tasks_docs');
+        const notesDlg = document.getElementById('notesDlg');
+        const userDlg = document.getElementById('userDlg')
+        const userName = "{{username}}";
+        const textArea = document.getElementById('messtext_inp');
+        const searchBtn = document.getElementById('searchBtn');
+        const searchInput = document.getElementById('searchInput');
 
 
-    // При загрузке страницы проверяем, сохранена ли тема
-    document.addEventListener('DOMContentLoaded', () => {
-        const savedTheme = localStorage.getItem('theme');
-        console.log("saved theme: "+savedTheme)
-        if (savedTheme === 'dark') {
-            document.body.classList.add('dark-theme');
-            console.log(document.body.classList[0]);
+        //  --------------------------------------------------------------
+        // Первоначальная загрузка сообщений и обновление каждые 3 секунды
+        set_minimal_id();
+        fetchMessages();
+        setInterval(fetchMessages, parseInt("{{messages_check_interval}}"));
+        setInterval(fetchActivUsers, parseInt("{{users_check_interval}}"));
+        fetchActivUsers();
+        set_userList();
+        // ----------------------------------------------------------------
+
+
+        // При загрузке страницы проверяем, сохранена ли тема
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            console.log("saved theme: " + savedTheme)
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+                console.log(document.body.classList[0]);
+            }
+        });
+
+        document.getElementById("attach_file_btn").addEventListener('click', (e) => {
+            uploadDialog = document.getElementById('file_upload_block');
+            //const button = document.getElementById('upload_btn');
+            //const button2 = document.getElementById('send_message_btn');
+            uploadDialog.showModal();
+            e.stopPropagation();
+        })
+
+        function closeUploadDialog() {
+            const uploadDialog = document.getElementById('file_upload_block');
+            //const button = document.getElementById('upload_btn');
+            //const button2 = document.getElementById('send_message_btn');
+            //button.disabled = !button.disabled;
+            //button2.disabled = !button2.disabled;       
+            uploadDialog.close();
         }
-    });
 
-    document.getElementById("attach_file_btn").addEventListener('click', (e) => {
-        uploadDialog = document.getElementById('file_upload_block');
-        //const button = document.getElementById('upload_btn');
-        //const button2 = document.getElementById('send_message_btn');
-        uploadDialog.showModal();  
-        e.stopPropagation();
-    })
-
-    function closeUploadDialog() {
-        const uploadDialog = document.getElementById('file_upload_block');
-        //const button = document.getElementById('upload_btn');
-        //const button2 = document.getElementById('send_message_btn');
-        //button.disabled = !button.disabled;
-        //button2.disabled = !button2.disabled;       
-        uploadDialog.close();
-    }
-
-    async function set_minimal_id(){
-       try {
-            const response = await fetch('/messages/first_id', {credentials: 'include'}); 
-            const data = await response.json();
-            //if ((data) && (Array.isArray(data) && data.length > 0)) {
+        async function set_minimal_id() {
+            try {
+                const response = await fetch('/messages/first_id', { credentials: 'include' });
+                const data = await response.json();
+                //if ((data) && (Array.isArray(data) && data.length > 0)) {
                 min_id = data.first_id;
                 console.log("set_minimal_id -  min_id:", min_id);
-            //}
-        } catch (error) {
-            console.error('Ошибка загрузки minimal id:', error);
-        }
-    }
-
-
-    // Отмечаем сообщение прочитанным
-    async function onMessClick(event){
-        console.log(event.target.tagName);
-        if (event.target.tagName != "A") {
-            event.preventDefault();
-            if ((event.currentTarget.dataset)&&(event.currentTarget.dataset.username != userName) && (event.currentTarget.dataset.uniqJson != ""))
-            try {
-                console.log("Отмечаем сообщение прочитанным:", event.currentTarget.dataset.uniqJson);
-                const response = await fetch('/messages/check_read', {
-                    method: "POST",
-                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                    body: event.currentTarget.dataset.uniqJson,                
-                    credentials: 'include'
-                }); 
-                const data = await response.json();
-                console.log(data);
-                data.forEach(users => {
-                    const elem = document.getElementById("badge_"+users.mess_id)
-                    elem.className ="number-badge";
-                    elem.innerHTML = String(users.cnt);
-                });
+                //}
             } catch (error) {
-                console.error('Ошибка загрузки сообщений:', error);
-                //window.location.href = "/";
+                console.error('Ошибка загрузки minimal id:', error);
             }
-            return true;
         }
-    }
 
 
-   //  Ставим лайк сообщению 
-    async function like_click(mess_id, mess_user_name){
-        if ((mess_id > 0)&&(mess_user_name != userName) && (userName != ""))
-        try {
-            console.log("Лайкаем сообщение :", mess_id, mess_user_name);
-            const response = await fetch('/messages/like', {
-                method: "POST",
-                headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    id: mess_id,
-                    username: mess_user_name
-                }),             
-                credentials: 'include'
-            }); 
-            const data = await response.json();
-            console.log(data);
-            data.forEach(users => {
-                let tempHTML = "";
-                const elem = document.getElementById("likes_"+users.mess_id);
-                for (let i = 0; i < users.cnt; i++) {
-                    tempHTML += `&#128077;`;
+        // Отмечаем сообщение прочитанным
+        async function onMessClick(event) {
+            console.log(event.target.tagName);
+            if (event.target.tagName != "A") {
+                event.preventDefault();
+                if ((event.currentTarget.dataset) && (event.currentTarget.dataset.username != userName) && (event.currentTarget.dataset.uniqJson != ""))
+                    try {
+                        console.log("Отмечаем сообщение прочитанным:", event.currentTarget.dataset.uniqJson);
+                        const response = await fetch('/messages/check_read', {
+                            method: "POST",
+                            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                            body: event.currentTarget.dataset.uniqJson,
+                            credentials: 'include'
+                        });
+                        const data = await response.json();
+                        console.log(data);
+                        data.forEach(users => {
+                            const elem = document.getElementById("badge_" + users.mess_id)
+                            elem.className = "number-badge";
+                            elem.innerHTML = String(users.cnt);
+                        });
+                    } catch (error) {
+                        console.error('Ошибка загрузки сообщений:', error);
+                        //window.location.href = "/";
+                    }
+                return true;
+            }
+        }
+
+
+        //  Ставим лайк сообщению 
+        async function like_click(mess_id, mess_user_name) {
+            if ((mess_id > 0) && (mess_user_name != userName) && (userName != ""))
+                try {
+                    console.log("Лайкаем сообщение :", mess_id, mess_user_name);
+                    const response = await fetch('/messages/like', {
+                        method: "POST",
+                        headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            id: mess_id,
+                            username: mess_user_name
+                        }),
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
+                    console.log(data);
+                    data.forEach(users => {
+                        let tempHTML = "";
+                        const elem = document.getElementById("likes_" + users.mess_id);
+                        for (let i = 0; i < users.cnt; i++) {
+                            tempHTML += `&#128077;`;
+                        }
+                        elem.innerHTML = tempHTML;
+                    });
+                } catch (error) {
+                    console.error('Ошибка загрузки сообщений:', error);
+                    //window.location.href = "/";
                 }
-                elem.innerHTML = tempHTML;
-            });
-        } catch (error) {
-            console.error('Ошибка загрузки сообщений:', error);
-            //window.location.href = "/";
+            return false;
         }
-        return false;
-    }
 
 
-    // Отрисовываем список активных пользователей
-    function renderUserList(data) {
-        usersList.innerHTML = '';
-        let tempStr = '';
-        data.forEach(users => {
-            let title_cl = "";
-            if (users.username != userName) {
-                title_cl = `title="${users.fio}&#10;{{send_personal_message_title2}}" onclick="personal_message(${users.userid}, '${userName}')"`;
+        // Отрисовываем список активных пользователей
+        function renderUserList(data) {
+            usersList.innerHTML = '';
+            let tempStr = '';
+            data.forEach(users => {
+                let title_cl = "";
+                if (users.username != userName) {
+                    title_cl = `title="${users.fio}&#10;{{send_personal_message_title2}}" onclick="personal_message(${users.userid}, '${userName}')"`;
 
-            } else { title_cl = `style="cursor:default;" title="${users.fio}"`; userDlg.dataset.fio = users.fio; }
+                } else { title_cl = `style="cursor:default;" title="${users.fio}"`; userDlg.dataset.fio = users.fio; }
 
-            if ((users.active) || (users.username == userName)) {
-                tempStr = tempStr + `<div class="cloud-text-wrapper"><span class="one_user active_user" ${title_cl}>${users.username}</span></div>`;
-            } else {
-                tempStr = tempStr + `<div class="cloud-text-wrapper"><span class="one_user" ${title_cl}>${users.username}</span></div>`;    
-            }    
-        });  
-        usersList.innerHTML = tempStr;
-    }
+                if ((users.active) || (users.username == userName)) {
+                    tempStr = tempStr + `<div class="cloud-text-wrapper"><span class="one_user active_user" ${title_cl}>${users.username}</span></div>`;
+                } else {
+                    tempStr = tempStr + `<div class="cloud-text-wrapper"><span class="one_user" ${title_cl}>${users.username}</span></div>`;
+                }
+            });
+            usersList.innerHTML = tempStr;
+        }
 
 
-    function personal_message(usrId, fromUserName){
-        to_userid = usrId;
-        from_name = fromUserName;
-        pers_messInput.value = '';
-        console.log(to_userid, from_name);
-        pers_dlg.showModal();
-    }
+        function personal_message(usrId, fromUserName) {
+            to_userid = usrId;
+            from_name = fromUserName;
+            pers_messInput.value = '';
+            console.log(to_userid, from_name);
+            pers_dlg.showModal();
+        }
 
-    pers_send_btn.addEventListener('click', async (e) => {
-        e.preventDefault(); 
-        if (pers_messInput.value != "") {     
+        pers_send_btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (pers_messInput.value != "") {
                 console.log("Отправка личного сообщения:", pers_messInput.value, to_userid, from_name);
                 // отправляем запрос
                 const response = await fetch("/messages/send_personal", {
-                        method: "POST",
-                        headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                        credentials: 'include',
-                        body: JSON.stringify({ 
-                            userid: to_userid,
-                            from: from_name,
-                            messtext: pers_messInput.value
-                        })
-                    });
-                const data = await response.json();     
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        userid: to_userid,
+                        from: from_name,
+                        messtext: pers_messInput.value
+                    })
+                });
+                const data = await response.json();
                 console.log("Send message - Server response:", data);
                 pers_messInput.value = '';
-        }
-        pers_dlg.close();
-    });
+            }
+            pers_dlg.close();
+        });
 
-    document.getElementById('pers_cancel').addEventListener('click', () => {
-        pers_messInput.value = '';
-        pers_dlg.close();
-    });
+        document.getElementById('pers_cancel').addEventListener('click', () => {
+            pers_messInput.value = '';
+            pers_dlg.close();
+        });
 
 
-    // Функция начальной отрисовки сообщений - все сообщения
-    function renderAllMessages(data, welcome_mess_block) {
-        let temp_id = 0;
-        let isStart = true;
-        if (lastId == 0) {
-            messagesList.innerHTML = welcome_mess_block; 
-            data.forEach(msg => {
-                if (isStart) {
-                    firstId = msg.id;
-                }
-                isStart = false;   
-                let left_right = " context_right"; 
-                let noTask = 0;
-                let noFiles = 1;
-                const div = document.createElement('div');
-                div.id = `mess_${msg.id}`;
-                if (!isRight) { 
-                    isRight = true; 
-                    if (msg.username == userName) {
-                        div.className = 'my-message-box';
-                    } else {
-                        div.className = 'message-box';                    
-                    }                      
-                } else {
-                    isRight = false; 
-                    if (msg.username == userName) {
-                        div.className = 'my-message-box-right';
-                    } else {
-                        div.className = 'message-box-right';                
+        // Функция начальной отрисовки сообщений - все сообщения
+        function renderAllMessages(data, welcome_mess_block) {
+            let temp_id = 0;
+            let isStart = true;
+            if (lastId == 0) {
+                messagesList.innerHTML = welcome_mess_block;
+                data.forEach(msg => {
+                    if (isStart) {
+                        firstId = msg.id;
                     }
-                    left_right = "";    
-                }    
+                    isStart = false;
+                    let left_right = " context_right";
+                    let noTask = 0;
+                    let noFiles = 1;
+                    const div = document.createElement('div');
+                    div.id = `mess_${msg.id}`;
+                    if (!isRight) {
+                        isRight = true;
+                        if (msg.username == userName) {
+                            div.className = 'my-message-box';
+                        } else {
+                            div.className = 'message-box';
+                        }
+                    } else {
+                        isRight = false;
+                        if (msg.username == userName) {
+                            div.className = 'my-message-box-right';
+                        } else {
+                            div.className = 'message-box-right';
+                        }
+                        left_right = "";
+                    }
 
-                let messAtext = msg.messtext;
-                let tmpTitle = ''; 
-                if (messAtext.includes("&#128206")) {
-                    noFiles = 0;
-                    tmpTitle = ' title="{{download_the_file_title}}"';
-                    messAtext = '<a href="/download-attachment/'+msg.id+'">'+msg.messtext+'</a>';
-                }
-               
-                let tempHTML = `
+                    let messAtext = msg.messtext;
+                    let tmpTitle = '';
+                    if (messAtext.includes("&#128206")) {
+                        noFiles = 0;
+                        tmpTitle = ' title="{{download_the_file_title}}"';
+                        messAtext = '<a href="/download-attachment/' + msg.id + '">' + msg.messtext + '</a>';
+                    }
+
+                    let tempHTML = `
                     <span class="username" onclick="like_click(${msg.id}, '${msg.username}')">${msg.username}</span>
                     <span class="messtext" id="mt_${msg.id}"${tmpTitle}>${messAtext}</span>`;
 
-                if ((msg.messtext.includes("&#128206")) || (msg.messtext.includes("<img")) || (msg.task == 1)) {  
-                    noTask = 1; 
-                    tempHTML += `<span class="timestamp" id="cr_${msg.id}">${msg.created_at}</span>`;                    
-                } else {
-                    tempHTML += `<span class="timestamp click_me" title="{{create_task_timestamp_title}}" id="created_${msg.id}">${msg.created_at}</span>`;
-                }    
+                    if ((msg.messtext.includes("&#128206")) || (msg.messtext.includes("<img")) || (msg.task == 1)) {
+                        noTask = 1;
+                        tempHTML += `<span class="timestamp" id="cr_${msg.id}">${msg.created_at}</span>`;
+                    } else {
+                        tempHTML += `<span class="timestamp click_me" title="{{create_task_timestamp_title}}" id="created_${msg.id}">${msg.created_at}</span>`;
+                    }
 
-                tempHTML += `<div  id="likes_${msg.id}"  class="likes">`;               
-                if (msg.likes > 0) {
-                    for (let i = 0; i < msg.likes; i++) {
-                        tempHTML += `&#128077;`;
-                    }    
-                }
-                tempHTML += `</div>`;
+                    tempHTML += `<div  id="likes_${msg.id}"  class="likes">`;
+                    if (msg.likes > 0) {
+                        for (let i = 0; i < msg.likes; i++) {
+                            tempHTML += `&#128077;`;
+                        }
+                    }
+                    tempHTML += `</div>`;
 
-                if (msg.checked == "0") {
-                    tempHTML += `<div id="badge_${msg.id}" class="gray-number-badge">${msg.checked}</div>`;
-                } else {
-                    tempHTML += `<div id="badge_${msg.id}" class="number-badge">${msg.checked}</div>`;
+                    if (msg.checked == "0") {
+                        tempHTML += `<div id="badge_${msg.id}" class="gray-number-badge">${msg.checked}</div>`;
+                    } else {
+                        tempHTML += `<div id="badge_${msg.id}" class="number-badge">${msg.checked}</div>`;
+                    }
+                    tempHTML += `<div id="menu_${msg.id}" onclick="display_context_menu(event, ${msg.id})" class="context_menu_clicker${left_right}">&#8942</div>`;
+                    div.innerHTML = tempHTML;
+                    div.dataset.username = msg.username;
+                    div.dataset.noTask = noTask;
+                    div.dataset.noFiles = noFiles;
+                    div.dataset.uniqJson = `{"id":${msg.id}, "username":"${msg.username}"}`;
+                    div.onclick = onMessClick;
+                    messagesList.appendChild(div);
+                    temp_id = msg.id;
+                });
+                lastId = temp_id;
+
+                if (scroll_switch.checked) {
+                    messagesList.scrollTop = messagesList.scrollHeight;
+                    if (!document.getElementById('comment_input')) {
+                        document.getElementById('messtext_inp').focus();
+                    }
                 }
-                tempHTML += `<div id="menu_${msg.id}" onclick="display_context_menu(event, ${msg.id})" class="context_menu_clicker${left_right}">&#8942</div>`;
-                div.innerHTML = tempHTML;
-                div.dataset.username = msg.username; 
-                div.dataset.noTask = noTask;
-                div.dataset.noFiles = noFiles;
-                div.dataset.uniqJson = `{"id":${msg.id}, "username":"${msg.username}"}`;
-                div.onclick = onMessClick;
-                messagesList.appendChild(div);
-                temp_id = msg.id;
-            });
-            lastId = temp_id;
-         
+            }
+
+        }
+
+
+        // Функция добавления новых сообщений -  отрисовываем новые
+        function renderNewMessages(data) {
+            let haveNewMessage = false;
+            if (lastId > 0) {
+                if (Array.isArray(data) && data.length === 0) {
+                    fetchConditions();
+                } else {
+                    const fragment = document.createDocumentFragment();
+                    data.forEach(msg => {
+                        haveNewMessage = true;
+                        let left_right = "context_right";
+                        div = document.createElement('div');
+                        div.id = 'mess_' + msg.id;
+                        let className = 'message-box';
+                        if (msg.username == userName) {
+                            className = 'my-' + className;
+                        }
+                        if (isRight) {
+                            isRight = false;
+                            className = className + '-right';
+                            left_right = "";
+                        } else { isRight = true; }
+                        div.className = className;
+                        if ((msg.messtext.includes("&#128206")) || (msg.messtext.includes("<img"))) {
+                            let mess_text = msg.messtext;
+                            if (msg.messtext.includes("&#128206")) {
+                                mess_text = `<a href="/download-attachment/${msg.id}">${msg.messtext}</a>`;
+                            }
+                            div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${mess_text}</span><span id="cr_${msg.id}" class="timestamp">${msg.created_at}</span>`;
+                            div.dataset.noTask = 1;
+                            if (msg.messtext.includes("&#128206")) {
+                                div.dataset.noFiles = 0;
+                            } else {
+                                div.dataset.noFiles = 1;
+                            }
+                        } else {
+                            div.dataset.noTask = 0;
+                            div.dataset.noFiles = 1;
+                            div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${msg.messtext}</span>
+                    <span id="created_${msg.id}" class="timestamp click_me" title="{{create_task_timestamp_title3}}">${msg.created_at}</span>`;
+                        }
+                        div.dataset.username = msg.username;
+                        div.dataset.uniqJson = `{"id":${msg.id}, "username":"${msg.username}"}`;
+                        div.onclick = onMessClick;
+
+                        let like_div = document.createElement('div');
+                        like_div.id = "likes_" + msg.id;
+                        like_div.className = "likes";
+                        let tempHTML = "";
+                        if (msg.likes > 0) {
+                            for (let i = 0; i < msg.likes; i++) {
+                                tempHTML += `&#128077;`;
+                            }
+                            like_div.innerHTML = tempHTML;
+                        }
+                        div.appendChild(like_div);
+
+                        let read_div = document.createElement('div');
+                        read_div.id = "badge_" + msg.id;
+
+                        if (msg.checked == "0") {
+                            read_div.className = "gray-number-badge";
+                        } else {
+                            read_div.className = "number-badge";
+                        }
+                        read_div.textContent = msg.checked;
+
+                        let click_div = document.createElement('div');
+                        click_div.id = "menu_" + msg.id;
+                        click_div.className = "context_menu_clicker";
+                        if (left_right != "") {
+                            click_div.classList.add(left_right);
+                        }
+
+                        click_div.addEventListener('click', (event) => {
+                            display_context_menu(event, msg.id);
+                        });
+
+                        click_div.innerHTML = "&#8942;";
+
+                        div.appendChild(read_div);
+                        div.appendChild(click_div);
+                        fragment.appendChild(div);
+
+                        lastId = msg.id;
+                    });
+
+                    messagesList.appendChild(fragment);
+                }
+            }
+            // Прокрутка вниз к последнему сообщению
             if (scroll_switch.checked) {
-                messagesList.scrollTop = messagesList.scrollHeight;
+                if (haveNewMessage) {
+                    messagesList.scrollTop = messagesList.scrollHeight;
+                }
                 if (!document.getElementById('comment_input')) {
                     document.getElementById('messtext_inp').focus();
                 }
             }
         }
 
-    }
+        // Welcome and brief description of the program
+        async function show_welcome_message() {
+            const response = await fetch('/static/{{welcome}}', { credentials: 'include' });
+            const data = await response.json();
+            if (data) {
+                console.log(data.username, data.messtext)
+                return `<div class="message-box-right welcome"><span class="username">${data.username}</span><span id="mt_welcome" class="messtext">${data.messtext}</span></div>`;
+            }
+            return '';
+        }
 
-
-    // Функция добавления новых сообщений -  отрисовываем новые
-    function renderNewMessages(data) {
-        let haveNewMessage = false;
-        if (lastId > 0) {
-         if (Array.isArray(data) && data.length === 0) {
-            fetchConditions();
-         } else {  
-            const fragment = document.createDocumentFragment();
+        // добавляем на границе блока с сообщением количество прочтений и лайки
+        function renderConditions(data) {
+            const usrIcon = document.getElementById("user_name");
+            let unread = 0;
             data.forEach(msg => {
-                haveNewMessage = true;
-                let left_right = "context_right"; 
-                div = document.createElement('div');
-                div.id = 'mess_' + msg.id;
-                let className = 'message-box';                                
-                if (msg.username == userName) {
-                    className = 'my-' +className;
-                }
-                if (isRight) {
-                    isRight = false; 
-                    className = className + '-right'; 
-                    left_right = "";                     
-                } else { isRight = true; }
-                div.className = className;   
-                if ((msg.messtext.includes("&#128206")) || (msg.messtext.includes("<img"))) {
-                    let mess_text =  msg.messtext;   
-                    if (msg.messtext.includes("&#128206")) {
-                        mess_text = `<a href="/download-attachment/${msg.id}">${msg.messtext}</a>`;   
+                if (msg.reads > 0) {
+                    let badge = document.getElementById("badge_" + msg.id);
+                    if (badge) {
+                        badge.textContent = msg.reads;
+                        badge.className = "number-badge";
                     }
-                    div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${mess_text}</span><span id="cr_${msg.id}" class="timestamp">${msg.created_at}</span>`; 
-                    div.dataset.noTask = 1;
-                    if (msg.messtext.includes("&#128206")) {
-                        div.dataset.noFiles = 0;                    
-                    } else {
-                        div.dataset.noFiles = 1;                    
-                    }
-                } else {
-                    div.dataset.noTask = 0;
-                    div.dataset.noFiles = 1;
-                    div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${msg.messtext}</span>
-                    <span id="created_${msg.id}" class="timestamp click_me" title="{{create_task_timestamp_title3}}">${msg.created_at}</span>`; 
                 }
-                div.dataset.username = msg.username; 
-                div.dataset.uniqJson = `{"id":${msg.id}, "username":"${msg.username}"}`;
-                div.onclick = onMessClick;
-
-                let like_div = document.createElement('div');
-                like_div.id = "likes_" +msg.id;
-                like_div.className = "likes";  
-                let tempHTML = "";  
                 if (msg.likes > 0) {
-                    for (let i = 0; i < msg.likes; i++) {
-                        tempHTML += `&#128077;`;
+                    let likes = document.getElementById("likes_" + msg.id);
+                    if (likes) {
+                        let tempHTML = "";
+                        for (let i = 0; i < msg.likes; i++) {
+                            tempHTML += `&#128077;`;
+                        }
+                        likes.innerHTML = tempHTML;
                     }
-                    like_div.innerHTML = tempHTML;
                 }
-                div.appendChild(like_div); 
-                
-                let read_div = document.createElement('div');
-                read_div.id = "badge_" + msg.id;
-
-                if (msg.checked == "0") {
-                    read_div.className = "gray-number-badge";
-                } else {
-                    read_div.className = "number-badge";
-                }
-                read_div.textContent = msg.checked;
-              
-                let click_div = document.createElement('div');
-                click_div.id = "menu_" + msg.id;
-                click_div.className = "context_menu_clicker";
-                if (left_right != "") {
-                    click_div.classList.add(left_right);
-                }
-
-                click_div.addEventListener('click', (event) => {
-                    display_context_menu(event, msg.id);
-                });
-
-                click_div.innerHTML = "&#8942;";
-                
-                div.appendChild(read_div);     
-                div.appendChild(click_div);  
-                fragment.appendChild(div);
-
-                lastId = msg.id;
+                unread += msg.unread;
             });
 
-            messagesList.appendChild(fragment);
-          }  
-        }
-        // Прокрутка вниз к последнему сообщению
-        if (scroll_switch.checked) { 
-            if (haveNewMessage) {
-                messagesList.scrollTop = messagesList.scrollHeight;
-            }
-            if (!document.getElementById('comment_input')) {
-                document.getElementById('messtext_inp').focus();
-            }
-        }
-    }
-
-    // Welcome and brief description of the program
-    async function show_welcome_message(){
-        const response = await fetch('/static/{{welcome}}', {credentials: 'include'}); 
-        const data = await response.json();  
-        if (data) {         
-            console.log(data.username, data.messtext)
-           return `<div class="message-box-right welcome"><span class="username">${data.username}</span><span id="mt_welcome" class="messtext">${data.messtext}</span></div>`; 
-        }
-        return '';
-    }
-
-    // добавляем на границе блока с сообщением количество прочтений и лайки
-    function renderConditions(data) { 
-        const usrIcon = document.getElementById("user_name");
-        let unread = 0;
-        data.forEach(msg => {
-            if (msg.reads > 0) {
-                let badge = document.getElementById("badge_" + msg.id);
-                if (badge) {
-                    badge.textContent = msg.reads;
-                    badge.className = "number-badge";
-                }
-            }    
-            if (msg.likes > 0) {                
-                let likes = document.getElementById("likes_" +msg.id);
-                if (likes) {
-                    let tempHTML = "";
-                    for (let i = 0; i < msg.likes; i++) {
-                        tempHTML += `&#128077;`;
-                    }    
-                    likes.innerHTML = tempHTML;   
-                }         
-            }  
-            unread += msg.unread;  
-        }); 
-        
-        if (unread > 0) {
-            usrIcon.innerHTML = userName + "&#128276;";
-        } else {
-            usrIcon.innerHTML = userName;
-        }
-    }    
-
-
-    // Запросить сообщения пользователей - Асинхронный запрос к FastAPI
-    async function fetchMessages() {
-        try {
-            let welcome = '';
-            const response = await fetch('/messages/get_messages/'+lastId, {credentials: 'include'}); 
-            const data = await response.json();
-            
-            if (lastId == 0) {
-                if (parseInt('{{msg_count}}') < 10) {
-                    welcome = await show_welcome_message();
-                }
-
-                renderAllMessages(data, welcome);
+            if (unread > 0) {
+                usrIcon.innerHTML = userName + "&#128276;";
             } else {
-                renderNewMessages(data);
-            }    
-        } catch (error) {
-            console.error('Messages loading error:', error);
-            window.location.href = "/";
+                usrIcon.innerHTML = userName;
+            }
         }
 
-        if (!showPersDlg.open) {
+
+        // Запросить сообщения пользователей - Асинхронный запрос к FastAPI
+        async function fetchMessages() {
             try {
-                const response = await fetch('/messages/get_personal', {credentials: 'include'}); 
-                const data = await response.json();        
-                if (data) {
-                    if (data.length > 0) {
-                        data.forEach(msg => {
-                            pers_mess_header.textContent = `{{you_have_personal_message}} ${msg.from}:`;
-                            pers_mess_text.textContent = msg.messtext;
-                            showPersDlg.showModal();
-                        });
+                let welcome = '';
+                const response = await fetch('/messages/get_messages/' + lastId, { credentials: 'include' });
+                const data = await response.json();
+
+                if (lastId == 0) {
+                    if (parseInt('{{msg_count}}') < 10) {
+                        welcome = await show_welcome_message();
                     }
+
+                    renderAllMessages(data, welcome);
+                } else {
+                    renderNewMessages(data);
                 }
             } catch (error) {
                 console.error('Messages loading error:', error);
+                window.location.href = "/";
+            }
+
+            if (!showPersDlg.open) {
+                try {
+                    const response = await fetch('/messages/get_personal', { credentials: 'include' });
+                    const data = await response.json();
+                    if (data) {
+                        if (data.length > 0) {
+                            data.forEach(msg => {
+                                pers_mess_header.textContent = `{{you_have_personal_message}} ${msg.from}:`;
+                                pers_mess_text.textContent = msg.messtext;
+                                showPersDlg.showModal();
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Messages loading error:', error);
+                }
             }
         }
-    }
 
-    closeSP_btn.addEventListener('click', () => {
-        showPersDlg.close();
-    });
+        closeSP_btn.addEventListener('click', () => {
+            showPersDlg.close();
+        });
 
 
-    // Запросить состояния "прочитано" и лайки
-    async function fetchConditions() {
-        try {
-            const response = await fetch('/messages/conditions', {credentials: 'include'}); 
-            const data = await response.json();
-            
-            renderConditions(data);    
-        } catch (error) {
-            console.error('Ошибка загрузки - reads and likes:', error);
-            window.location.href = "/";
+        // Запросить состояния "прочитано" и лайки
+        async function fetchConditions() {
+            try {
+                const response = await fetch('/messages/conditions', { credentials: 'include' });
+                const data = await response.json();
+
+                renderConditions(data);
+            } catch (error) {
+                console.error('Ошибка загрузки - reads and likes:', error);
+                window.location.href = "/";
+            }
         }
-    }
 
 
-    // Запросить активных пользователей - Асинхронный запрос к FastAPI
-    async function fetchActivUsers() {
-        try {
-            const response = await fetch('/users/get_activity', {credentials: 'include'}); 
-            const data = await response.json();
+        // Запросить активных пользователей - Асинхронный запрос к FastAPI
+        async function fetchActivUsers() {
+            try {
+                const response = await fetch('/users/get_activity', { credentials: 'include' });
+                const data = await response.json();
 
-            renderUserList(data);
-        } catch (error) {
-            console.error('Ошибка загрузки activ users list:', error);
+                renderUserList(data);
+            } catch (error) {
+                console.error('Ошибка загрузки activ users list:', error);
+            }
         }
-    }
-    
 
-    // Функция-дебаунсер (задержка выполнения)
-    function debounce(func, delay) {
-        let timeout;
-        return (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), delay);
+
+        // Функция-дебаунсер (задержка выполнения)
+        function debounce(func, delay) {
+            let timeout;
+            return (...args) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        // Проверяем сохраненную ширину при загрузке
+        const savedWidth = localStorage.getItem('block-width');
+        if (savedWidth) {
+            document.querySelector('.chat-container').style.width = `${savedWidth}px`;
+        }
+
+        // СОХРАНЕНИЕ: Оборачиваем запись в дебаунс
+        const saveToLS = debounce((width) => {
+            localStorage.setItem('block-width', width);
+            console.log('Ширина сохранена:', width);
+        }, 500);
+
+        const resizeObserver = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                const width = entry.contentRect.width;
+                saveToLS(width);
+            }
+        });
+
+        // Начинаем следить за блоком, ширину которого пользователь может менять и ее нужно "запомнить"
+        resizeObserver.observe(document.querySelector('.chat-container'));
+
+
+
+        // Обработка отправки формы нового сообщения  "message-form"
+        document.getElementById('message-form').onsubmit = async (e) => {
+            e.preventDefault();
+            if (e.submitter != document.getElementById("attach_file_btn")) {
+                await send_message_request();
+            }
         };
-    }
 
-    // Проверяем сохраненную ширину при загрузке
-    const savedWidth = localStorage.getItem('block-width');
-    if (savedWidth) {
-        document.querySelector('.chat-container').style.width = `${savedWidth}px`;
-    }           
+        // perform a send message request to back-end
+        async function send_message_request() {
+            const userid = document.getElementById("userid").value;
+            const messtext = document.getElementById("messtext_inp").value;
+            if (messtext != "") {
+                console.log("Отправка сообщения:", messtext);
+                console.log("userid:", userid);
 
-    // СОХРАНЕНИЕ: Оборачиваем запись в дебаунс
-    const saveToLS = debounce((width) => {
-        localStorage.setItem('block-width', width);
-        console.log('Ширина сохранена:', width); 
-    }, 500);
-
-    const resizeObserver = new ResizeObserver(entries => {
-        for (let entry of entries) {
-            const width = entry.contentRect.width;
-            saveToLS(width);
-        }
-    });
-
-    // Начинаем следить за блоком, ширину которого пользователь может менять и ее нужно "запомнить"
-    resizeObserver.observe(document.querySelector('.chat-container'));
-
-
-
-    // Обработка отправки формы нового сообщения  "message-form"
-    document.getElementById('message-form').onsubmit = async (e) => {
-        e.preventDefault();
-        if (e.submitter != document.getElementById("attach_file_btn")) {
-            await send_message_request();
-        }
-    };
-
-    // perform a send message request to back-end
-    async function send_message_request() {
-        const userid = document.getElementById("userid").value;
-        const messtext = document.getElementById("messtext_inp").value;   
-        if (messtext != "") {     
-            console.log("Отправка сообщения:", messtext);
-            console.log("userid:", userid);
-
-            // отправляем запрос
-            const response = await fetch("/messages/add", {
+                // отправляем запрос
+                const response = await fetch("/messages/add", {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json" },
                     credentials: 'include',
-                    body: JSON.stringify({ 
+                    body: JSON.stringify({
                         userid: userid,
                         messtext: messtext
                     })
                 });
-            const data = await response.json();     
-            console.log("Send message - Server response:", data);
+                const data = await response.json();
+                console.log("Send message - Server response:", data);
 
-            document.getElementById("messtext_inp").value = '';
+                document.getElementById("messtext_inp").value = '';
+            }
         }
-    }
 
-    // Создание (сохранение на сервере) новой задачи -  асинхронный POST Request к FastAPI
-    document.getElementById('task_form').onsubmit = async (e) => {
-        e.preventDefault();
-        if (e.submitter == document.getElementById("makeTaskBtn")) {
-            const task_title = document.getElementById("task_title_inp").value;
-            const creator = document.getElementById("taskCreator").value;
-            const task_id = document.getElementById("task_id").value; 
-            const resp = document.getElementById("respons").value;  
-            const due_date = document.getElementById("due_date").value;  
-            const messtext = document.getElementById("mt_"+task_id); 
-            const created = document.getElementById("ctreted_"+task_id);
-            const dDate = new Date(due_date);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if ((messtext != "") && (dDate > today)) {     
-                console.log("Создание задания: ", task_id);
-                console.log("Creator:", userid);
+        // Создание (сохранение на сервере) новой задачи -  асинхронный POST Request к FastAPI
+        document.getElementById('task_form').onsubmit = async (e) => {
+            e.preventDefault();
+            if (e.submitter == document.getElementById("makeTaskBtn")) {
+                const task_title = document.getElementById("task_title_inp").value;
+                const creator = document.getElementById("taskCreator").value;
+                const task_id = document.getElementById("task_id").value;
+                const resp = document.getElementById("respons").value;
+                const due_date = document.getElementById("due_date").value;
+                const messtext = document.getElementById("mt_" + task_id);
+                const created = document.getElementById("ctreted_" + task_id);
+                const dDate = new Date(due_date);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                if ((messtext != "") && (dDate > today)) {
+                    console.log("Создание задания: ", task_id);
+                    console.log("Creator:", userid);
 
-                // отправляем запрос
-                const response = await fetch("/tasks/add", {
+                    // отправляем запрос
+                    const response = await fetch("/tasks/add", {
                         method: "POST",
                         headers: { "Accept": "application/json", "Content-Type": "application/json" },
                         credentials: 'include',
-                        body: JSON.stringify({ 
+                        body: JSON.stringify({
                             id: task_id,
                             creator: creator,
                             respons: resp,
@@ -784,347 +802,347 @@
                             title: task_title
                         })
                     });
-                const data = await response.json();     
-                console.log("New task - Server response:", data);
+                    const data = await response.json();
+                    console.log("New task - Server response:", data);
 
-                tasksDiv.classList.remove("taskDiv_opened");
-                if (created) {
-                    created.classList.remove("click_me");
-                }
-            } else {
-                console.log("введен неверный срок завершения задачи "+due_date);
-                console.log("Задача НЕ создана!");
-            }
-        }
-    };
-
-
-    //  загрузка более старых сообщений (истории) - по клику на кнопке "Загрузить более ранние сообщения"
-    document.getElementById("get_history_btn").onclick = async (e) => {
-        e.preventDefault();
-        document.getElementById("get_history_btn").disabled = true;
-        // let stId = Number(localStorage.getItem('MIN_ID'));   
-        console.log('history - min_id:', min_id);
-        if (firstId > min_id) {
-            let isStart = true;
-            scroll_switch.checked = false;
-            const response = await fetch('/messages/get_prev/'+firstId, {credentials: 'include'}); 
-            const data = await response.json();
-            if (data) {
-                const fragment = document.createDocumentFragment();
-                let cnt = 0;
-                data.reverse().forEach(msg => {
-                    if (isStart) {
-                        firstId = msg.id;
-                        console.log("first message id = ", msg.id);
-                        isStart = false;
-                    }
-                    const div = document.createElement('div');
-                    div.id = 'mess_' + msg.id;
-                    let className = 'message-box';                                
-                    if (msg.username == userName) {
-                        className = 'my-' +className;
-                    }
-                    if (isRight) {
-                        isRight = false; 
-                        className = className + '-right';                    
-                    } else { isRight = true; }
-                    div.className = className;  
-                    if ((msg.messtext.includes("&#128206")) || (msg.messtext.includes("<img")) || (msg.task == 1)) { 
-                        let mess_text = msg.messtext;
-                        if (msg.messtext.includes("&#128206")) {
-                            mess_text = `<a href="/download-attachment/${msg.id}">${mess_text}</a>`;   
-                        }
-                        div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${mess_text}</span><span id="cr_${msg.id}" class="timestamp">${msg.created_at}</span>`;
-                    } else {
-                        div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${msg.messtext}</span><span id="created_${msg.id}" class="timestamp click_me" title="{{create_task_timestamp_title4}}">${msg.created_at}</span>`;
-                    }    
-                    div.dataset.username = msg.username; 
-                    div.dataset.uniqJson = `{"id":${msg.id}, "username":"${msg.username}"}`;
-                    read_div = document.createElement('div');
-                    read_div.id = "badge_" + msg.id;
-                    read_div = document.createElement('div');
-                    read_div.id = "badge_" + msg.id;
-                    if (msg.checked == "0") {
-                        read_div.className = "gray-number-badge";
-                    } else {
-                        read_div.className = "number-badge";
-                    }
-                    read_div.textContent = msg.checked;
-                    div.appendChild(read_div);                
-
-                    fragment.appendChild(div); // Добавляем во временный буфер
-                    cnt++;
-                });
-
-                if (cnt > 0) {
-                    messagesList.prepend(fragment);
-
-                    messagesList.scrollTo({top: 0, behavior: 'smooth'});
-                }
-            }  
-            // let stId = Number(localStorage.getItem('MIN_ID')); 
-            if (firstId > min_id) { document.getElementById("get_history_btn").disabled = false; }
-        }
-    }
- 
-
-    //  загрузка вложения к сообщению (file upload) - по клику на кнопке
-    document.getElementById("upload_btn").onclick = async (e) => {
-        e.preventDefault();
-        const uploadBlock = document.getElementById('file_upload_block');
-        const fileInput = document.getElementById('fileInput');
-        const status = document.getElementById('status');
-
-        // Проверяем, выбрал ли пользователь файл
-        if (fileInput.files.length === 0) {
-            status.innerText = "{{please_select_a_file}}";
-            return;
-        }
-
-        const file = fileInput.files[0];
-
-        if (file.name == uploadBlock.dataset.filename) {
-            status.innerText = `{{the_same_file}}`;               
-            console.log(file.name, " === ", uploadBlock.dataset.filename);
-            return;
-        }
-
-        const formData = new FormData();
-        
-        formData.append('file', file);
-
-        status.innerText = "{{upload_in_progress}}";
-
-        try {
-            const response = await fetch('/upload-attachment/', {
-                method: 'POST',
-                body: formData,
-                credentials: 'include'
-            });
-            if (response) {
-                if (response.ok) {
-                    const result = await response.json();
-                    if (result) {
-                        if (result.error) {
-                            status.innerText = result.error; 
-                        } else {
-                            status.innerText = `{{file_uploaded_successfully}} ${result.filename}`;
-                            uploadBlock.dataset.filename = result.filename; 
-                        }
-                        console.log(result);
+                    tasksDiv.classList.remove("taskDiv_opened");
+                    if (created) {
+                        created.classList.remove("click_me");
                     }
                 } else {
-                    status.innerText = `{{Server_error_status}}: ${response.status}`;
+                    console.log("введен неверный срок завершения задачи " + due_date);
+                    console.log("Задача НЕ создана!");
                 }
             }
-        } catch (error) {
-            console.error('Ошибка:', error);
-            status.innerText = "{{Unsuccessful_upload}}";
-        }
-        fileInput.value = ''; // Сброс выбора файла
-        //document.getElementById('upload_btn').disabled = true;
-        uploadBlock.close();
-        e.stopPropagation
-    }
+        };
 
 
+        //  загрузка более старых сообщений (истории) - по клику на кнопке "Загрузить более ранние сообщения"
+        document.getElementById("get_history_btn").onclick = async (e) => {
+            e.preventDefault();
+            document.getElementById("get_history_btn").disabled = true;
+            // let stId = Number(localStorage.getItem('MIN_ID'));   
+            console.log('history - min_id:', min_id);
+            if (firstId > min_id) {
+                let isStart = true;
+                scroll_switch.checked = false;
+                const response = await fetch('/messages/get_prev/' + firstId, { credentials: 'include' });
+                const data = await response.json();
+                if (data) {
+                    const fragment = document.createDocumentFragment();
+                    let cnt = 0;
+                    data.reverse().forEach(msg => {
+                        if (isStart) {
+                            firstId = msg.id;
+                            console.log("first message id = ", msg.id);
+                            isStart = false;
+                        }
+                        const div = document.createElement('div');
+                        div.id = 'mess_' + msg.id;
+                        let className = 'message-box';
+                        if (msg.username == userName) {
+                            className = 'my-' + className;
+                        }
+                        if (isRight) {
+                            isRight = false;
+                            className = className + '-right';
+                        } else { isRight = true; }
+                        div.className = className;
+                        if ((msg.messtext.includes("&#128206")) || (msg.messtext.includes("<img")) || (msg.task == 1)) {
+                            let mess_text = msg.messtext;
+                            if (msg.messtext.includes("&#128206")) {
+                                mess_text = `<a href="/download-attachment/${msg.id}">${mess_text}</a>`;
+                            }
+                            div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${mess_text}</span><span id="cr_${msg.id}" class="timestamp">${msg.created_at}</span>`;
+                        } else {
+                            div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${msg.messtext}</span><span id="created_${msg.id}" class="timestamp click_me" title="{{create_task_timestamp_title4}}">${msg.created_at}</span>`;
+                        }
+                        div.dataset.username = msg.username;
+                        div.dataset.uniqJson = `{"id":${msg.id}, "username":"${msg.username}"}`;
+                        read_div = document.createElement('div');
+                        read_div.id = "badge_" + msg.id;
+                        read_div = document.createElement('div');
+                        read_div.id = "badge_" + msg.id;
+                        if (msg.checked == "0") {
+                            read_div.className = "gray-number-badge";
+                        } else {
+                            read_div.className = "number-badge";
+                        }
+                        read_div.textContent = msg.checked;
+                        div.appendChild(read_div);
 
-    // Отправка сообщения по нажатию клавиши Enter 
-    textArea.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault(); // Отменяем перенос строки
-            const submitBtn = document.getElementById("send_message_btn");
-            document.getElementById('message-form').requestSubmit(submitBtn); 
-        }
-    });    
- 
+                        fragment.appendChild(div); // Добавляем во временный буфер
+                        cnt++;
+                    });
 
-    // Поиск по сообщениям на странице    
-    function findAndScroll() {
-        const query = searchInput.value.toLowerCase();
-        const messages = document.querySelectorAll('.messtext');
-    
-        if (!query) return; // Если поиск пустой, ничего не делаем
+                    if (cnt > 0) {
+                        messagesList.prepend(fragment);
 
-        // Сбрасываем старую подсветку
-        messages.forEach(users => users.style.backgroundColor = "");
-
-        // Ищем первое вхождение
-        for (let msg of messages) {
-            if (msg.textContent.toLowerCase().includes(query)) {
-                // 1. Подсвечиваем найденное сообщение
-                msg.style.backgroundColor = "#ffeb3b"; 
-                // 2. Скроллим к нему плавно
-                msg.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center' // Центрируем сообщение на экране
-                });
-                break; // Останавливаемся на первом найденном
+                        messagesList.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                }
+                // let stId = Number(localStorage.getItem('MIN_ID')); 
+                if (firstId > min_id) { document.getElementById("get_history_btn").disabled = false; }
             }
         }
-        searchInput.value = "";
-        searchInput.classList.remove('si_active');
-        document.getElementById("sliding-panel").classList.remove('panel-opened');
-    }
 
 
-    //  отработка события click (нажатия) кнопки поиска  
-    searchBtn.addEventListener('click', (e) => {
-    if (!searchInput.classList.contains('si_active')) {
-        scroll_switch.checked = false;
-        searchInput.classList.add('si_active');
-        searchInput.focus(); // Сразу ставим курсор
-    } else {
-        // Если открыто — проверяем, есть ли текст для поиска
-        if (searchInput.value.trim() !== "") {
-            scroll_switch.checked = false;
-            findAndScroll();  // ищем !
-        } else {
-             // Если текста нет, можно закрыть обратно при клике
+        //  загрузка вложения к сообщению (file upload) - по клику на кнопке
+        document.getElementById("upload_btn").onclick = async (e) => {
+            e.preventDefault();
+            const uploadBlock = document.getElementById('file_upload_block');
+            const fileInput = document.getElementById('fileInput');
+            const status = document.getElementById('status');
+
+            // Проверяем, выбрал ли пользователь файл
+            if (fileInput.files.length === 0) {
+                status.innerText = "{{please_select_a_file}}";
+                return;
+            }
+
+            const file = fileInput.files[0];
+
+            if (file.name == uploadBlock.dataset.filename) {
+                status.innerText = `{{the_same_file}}`;
+                console.log(file.name, " === ", uploadBlock.dataset.filename);
+                return;
+            }
+
+            const formData = new FormData();
+
+            formData.append('file', file);
+
+            status.innerText = "{{upload_in_progress}}";
+
+            try {
+                const response = await fetch('/upload-attachment/', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                if (response) {
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result) {
+                            if (result.error) {
+                                status.innerText = result.error;
+                            } else {
+                                status.innerText = `{{file_uploaded_successfully}} ${result.filename}`;
+                                uploadBlock.dataset.filename = result.filename;
+                            }
+                            console.log(result);
+                        }
+                    } else {
+                        status.innerText = `{{Server_error_status}}: ${response.status}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                status.innerText = "{{Unsuccessful_upload}}";
+            }
+            fileInput.value = ''; // Сброс выбора файла
+            //document.getElementById('upload_btn').disabled = true;
+            uploadBlock.close();
+            e.stopPropagation
+        }
+
+
+
+        // Отправка сообщения по нажатию клавиши Enter 
+        textArea.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Отменяем перенос строки
+                const submitBtn = document.getElementById("send_message_btn");
+                document.getElementById('message-form').requestSubmit(submitBtn);
+            }
+        });
+
+
+        // Поиск по сообщениям на странице    
+        function findAndScroll() {
+            const query = searchInput.value.toLowerCase();
+            const messages = document.querySelectorAll('.messtext');
+
+            if (!query) return; // Если поиск пустой, ничего не делаем
+
+            // Сбрасываем старую подсветку
+            messages.forEach(users => users.style.backgroundColor = "");
+
+            // Ищем первое вхождение
+            for (let msg of messages) {
+                if (msg.textContent.toLowerCase().includes(query)) {
+                    // 1. Подсвечиваем найденное сообщение
+                    msg.style.backgroundColor = "#ffeb3b";
+                    // 2. Скроллим к нему плавно
+                    msg.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center' // Центрируем сообщение на экране
+                    });
+                    break; // Останавливаемся на первом найденном
+                }
+            }
+            searchInput.value = "";
             searchInput.classList.remove('si_active');
-            document.getElementById("sliding-panel").classList.remove('sl-pan-opened');
+            document.getElementById("sliding-panel").classList.remove('panel-opened');
         }
-        e.stopPropagation
-    }
-    });
 
 
-    // Открытие и Закрытие дополнительной панели (активные пользователи, задачи, документы)
-    document.addEventListener('click', async (e) => {
-        const clickedElement = e.target;
-        const sl_pan = document.getElementById("sliding-panel");
-        const header = document.getElementById("nice-list-header"); 
-
-        if (clickedElement.closest("#light_dark")) {               // обработка события Смена темы со светлой на темную и обратно 
-            console.log("Событие смены темы светлая / темная");
-            document.body.classList.toggle('dark-theme');
-            // Проверяем, какой класс в итоге оказался у body
-            if (document.body.classList.contains('dark-theme')) {
-                localStorage.setItem('theme', 'dark');
+        //  отработка события click (нажатия) кнопки поиска  
+        searchBtn.addEventListener('click', (e) => {
+            if (!searchInput.classList.contains('si_active')) {
+                scroll_switch.checked = false;
+                searchInput.classList.add('si_active');
+                searchInput.focus(); // Сразу ставим курсор
             } else {
-                localStorage.setItem('theme', 'light');
-            }
-            console.log("Тема сохранена:", localStorage.getItem('theme'));
-
-        } else if (clickedElement.closest("#tasks_docs")) {  
-            console.log("Событие смены режима Задачи / Документы");
-            if (tasksDocsBtn.dataset.action == 'docs') {
-                console.log("В задачи");
-                tasksDocsBtn.dataset.action = 'tasks';
-                tasksDocsBtn.title = "{{Important_documents_title}}";
-                tasksDocsBtn.innerHTML = "&#128220;";
-                header.textContent = "{{Tasks_list_header}}"; 
-                fetchTasks();
-            } else {
-                console.log("Документы");
-                tasksDocsBtn.dataset.action = 'docs';
-                tasksDocsBtn.title = "{{go_to_tasks_list_title}}";
-                tasksDocsBtn.innerHTML = "&#128256;";   // &#128736;&#65039;
-                document.getElementById("task-list").innerHTML = "";
-                header.textContent = "{{Important_documents_header}}"; 
-                fetchDocuments();
-            }
-        } else if (clickedElement.closest('#chat-header')) {         // обработка события Открыть дополнительную (оускающуюся) панель (Пользователи, Задачи, Поиск)
-            if ((!sl_pan.classList.contains("panel-opened")) && (!e.target.closest('#searchBtn'))) {
-                sl_pan.classList.add("panel-opened");
-                if (tasksDocsBtn.dataset.action == 'tasks') {
-                    fetchTasks();
-                }
-            } else if ((!clickedElement.closest('#sliding-panel')) && (!notesDlg.open) && (!deadlineDialog.open) && (!save_confirm_dialog.open)) {
-                if (sl_pan.classList.contains("panel-opened")) {     //  закрыть открытую ранее дополнительную панель (sliding panel)
+                // Если открыто — проверяем, есть ли текст для поиска
+                if (searchInput.value.trim() !== "") {
+                    scroll_switch.checked = false;
+                    findAndScroll();  // ищем !
+                } else {
+                    // Если текста нет, можно закрыть обратно при клике
                     searchInput.classList.remove('si_active');
-                    sl_pan.classList.remove('panel-opened');    
-                } else if (tasksDiv.classList.contains("taskDiv_opened")) {   // обработка события Закрыть блок добавления новой задачи
-                    tasksDiv.classList.remove("taskDiv_opened");
-                }          
-            }    
-        } else if ((!clickedElement.closest('#chat-header')) && (clickedElement.tagName != "A") && (!notesDlg.open) && (!deadlineDialog.open) && (!save_confirm_dialog.open)) {
-            if ( sl_pan.classList.contains('panel-opened') ) {
-                searchInput.classList.remove('si_active');
-                sl_pan.classList.remove('panel-opened');
-            } else if (clickedElement.classList.contains("timestamp")) {
-                if (clickedElement.id.includes("created_")) {              // обработка события Открыть блок добавления новой задачи
-                 scroll_switch.checked = false;
-                 document.getElementById("task_id").value = clickedElement.id.replace("created_", "");
-                 console.log(document.getElementById("task_id").value);
-                 tasksDiv.classList.add("taskDiv_opened");
+                    document.getElementById("sliding-panel").classList.remove('sl-pan-opened');
                 }
-            }   
-        } 
-    });    
-
-
-    //  Запуск поиска по нажатию Enter в поле ввода Поиск
-    searchInput.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            findAndScroll();
-        }
-    });   
-    
-    // Отмена создания задачи - просто закрыть диалог
-    function closeTaskDiv() {
-        tasksDiv.classList.remove("taskDiv_opened");
-    }
-
-    // Закрыть при подтверждении - Закрыть задачу и закрыть диалог
-    confirmButton.addEventListener('click', () => {
-        closeTaskRequest();
-        dialog.close();
-        task_id = 0;
-        console.log("Подтверждено");
-    });
-
-    // Закрыть при отмене - отказаться от закрытия задачи
-    cancelButton.addEventListener('click', () => {
-        dialog.close();
-        task_id = 0;
-        console.log("Отменено");
-    });
-
-
-    // Список пользователей (загрузить) для элемента <select> формы создания новой задачи
-    async function set_userList() {
-        try {
-            const response = await fetch('/users/get_users', {credentials: 'include'}); 
-            const data = await response.json();
-  
-            if (data) {
-                const select = document.getElementById('respons');
-                data.forEach(usr => {
-                    let newOption = new Option(usr.username, usr.userid);
-                    console.log(`username=${usr.username}, userid=${usr.userid}`);
-                    select.add(newOption);
-                });
+                e.stopPropagation
             }
-        } catch (error) {
-            console.error('Ошибка загрузки users list:', error);
-        }
-    }
+        });
 
 
-    // Создать карточки с задачами во всплывающем окне задач из json-массива    
-    function renderAllTasks(data) {
-        const parentDiv = document.getElementById("task-list");
-        const fragment = document.createDocumentFragment();
+        // Открытие и Закрытие дополнительной панели (активные пользователи, задачи, документы)
+        document.addEventListener('click', async (e) => {
+            const clickedElement = e.target;
+            const sl_pan = document.getElementById("sliding-panel");
+            const header = document.getElementById("nice-list-header");
 
-        data.forEach(task => {
-            let task_expired = "";
-            if (Number(task.expired) > 0) {
-                task_expired = " task_expired";
-            } 
-            const div = document.createElement('div');
+            if (clickedElement.closest("#light_dark")) {               // обработка события Смена темы со светлой на темную и обратно 
+                console.log("Событие смены темы светлая / темная");
+                document.body.classList.toggle('dark-theme');
+                // Проверяем, какой класс в итоге оказался у body
+                if (document.body.classList.contains('dark-theme')) {
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    localStorage.setItem('theme', 'light');
+                }
+                console.log("Тема сохранена:", localStorage.getItem('theme'));
 
-            let dTitle = "";
-            let tmp0 = "";
-            if (task.creator == userName) {
-                tmp0 = `<div class="close-task" onclick="closeTask(${task.id})"> {{closeTaskButton}} </div>`;
-                dTitle = "You can change it";
-            } else {
-                tmp0 = `<div class="close-task disabled"> {{closeTaskButton}} </div>`;
+            } else if (clickedElement.closest("#tasks_docs")) {
+                console.log("Событие смены режима Задачи / Документы");
+                if (tasksDocsBtn.dataset.action == 'docs') {
+                    console.log("В задачи");
+                    tasksDocsBtn.dataset.action = 'tasks';
+                    tasksDocsBtn.title = "{{Important_documents_title}}";
+                    tasksDocsBtn.innerHTML = "&#128220;";
+                    header.textContent = "{{Tasks_list_header}}";
+                    fetchTasks();
+                } else {
+                    console.log("Документы");
+                    tasksDocsBtn.dataset.action = 'docs';
+                    tasksDocsBtn.title = "{{go_to_tasks_list_title}}";
+                    tasksDocsBtn.innerHTML = "&#128256;";   // &#128736;&#65039;
+                    document.getElementById("task-list").innerHTML = "";
+                    header.textContent = "{{Important_documents_header}}";
+                    fetchDocuments();
+                }
+            } else if (clickedElement.closest('#chat-header')) {         // обработка события Открыть дополнительную (оускающуюся) панель (Пользователи, Задачи, Поиск)
+                if ((!sl_pan.classList.contains("panel-opened")) && (!e.target.closest('#searchBtn'))) {
+                    sl_pan.classList.add("panel-opened");
+                    if (tasksDocsBtn.dataset.action == 'tasks') {
+                        fetchTasks();
+                    }
+                } else if ((!clickedElement.closest('#sliding-panel')) && (!notesDlg.open) && (!deadlineDialog.open) && (!save_confirm_dialog.open)) {
+                    if (sl_pan.classList.contains("panel-opened")) {     //  закрыть открытую ранее дополнительную панель (sliding panel)
+                        searchInput.classList.remove('si_active');
+                        sl_pan.classList.remove('panel-opened');
+                    } else if (tasksDiv.classList.contains("taskDiv_opened")) {   // обработка события Закрыть блок добавления новой задачи
+                        tasksDiv.classList.remove("taskDiv_opened");
+                    }
+                }
+            } else if ((!clickedElement.closest('#chat-header')) && (clickedElement.tagName != "A") && (!notesDlg.open) && (!deadlineDialog.open) && (!save_confirm_dialog.open)) {
+                if (sl_pan.classList.contains('panel-opened')) {
+                    searchInput.classList.remove('si_active');
+                    sl_pan.classList.remove('panel-opened');
+                } else if (clickedElement.classList.contains("timestamp")) {
+                    if (clickedElement.id.includes("created_")) {              // обработка события Открыть блок добавления новой задачи
+                        scroll_switch.checked = false;
+                        document.getElementById("task_id").value = clickedElement.id.replace("created_", "");
+                        console.log(document.getElementById("task_id").value);
+                        tasksDiv.classList.add("taskDiv_opened");
+                    }
+                }
             }
+        });
 
-            let tmpHtml = `<span class="task_header">{{task_created_at}}: <b>${task.created_at}</b> <div class="task_title"><span class="task_title_span">${task.title}</span></div></span>
+
+        //  Запуск поиска по нажатию Enter в поле ввода Поиск
+        searchInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                findAndScroll();
+            }
+        });
+
+        // Отмена создания задачи - просто закрыть диалог
+        function closeTaskDiv() {
+            tasksDiv.classList.remove("taskDiv_opened");
+        }
+
+        // Закрыть при подтверждении - Закрыть задачу и закрыть диалог
+        confirmButton.addEventListener('click', () => {
+            closeTaskRequest();
+            dialog.close();
+            task_id = 0;
+            console.log("Подтверждено");
+        });
+
+        // Закрыть при отмене - отказаться от закрытия задачи
+        cancelButton.addEventListener('click', () => {
+            dialog.close();
+            task_id = 0;
+            console.log("Отменено");
+        });
+
+
+        // Список пользователей (загрузить) для элемента <select> формы создания новой задачи
+        async function set_userList() {
+            try {
+                const response = await fetch('/users/get_users', { credentials: 'include' });
+                const data = await response.json();
+
+                if (data) {
+                    const select = document.getElementById('respons');
+                    data.forEach(usr => {
+                        let newOption = new Option(usr.username, usr.userid);
+                        console.log(`username=${usr.username}, userid=${usr.userid}`);
+                        select.add(newOption);
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки users list:', error);
+            }
+        }
+
+
+        // Создать карточки с задачами во всплывающем окне задач из json-массива    
+        function renderAllTasks(data) {
+            const parentDiv = document.getElementById("task-list");
+            const fragment = document.createDocumentFragment();
+
+            data.forEach(task => {
+                let task_expired = "";
+                if (Number(task.expired) > 0) {
+                    task_expired = " task_expired";
+                }
+                const div = document.createElement('div');
+
+                let dTitle = "";
+                let tmp0 = "";
+                if (task.creator == userName) {
+                    tmp0 = `<div class="close-task" onclick="closeTask(${task.id})"> {{closeTaskButton}} </div>`;
+                    dTitle = "You can change it";
+                } else {
+                    tmp0 = `<div class="close-task disabled"> {{closeTaskButton}} </div>`;
+                }
+
+                let tmpHtml = `<span class="task_header">{{task_created_at}}: <b>${task.created_at}</b> <div class="task_title"><span class="task_title_span">${task.title}</span></div></span>
                        <span class="task_header">{{task_owner}}: <b>${task.creator}</b></span>
                        <span class="task_header"><span id="deadline_${task.id}" onclick="edit_deadline(${task.id}, '${task.deadline}', '${task.creator}')" class="deadline" title='${dTitle}'>{{task_deadline}}: <b>${task.deadline}</b></span> ${tmp0}</span>
                        <span class="task_header">{{task_performer}}: <b>${task.respons}</b></span>
@@ -1132,563 +1150,564 @@
                        <div id="z_${task.id}" class="task_text${task_expired}" onclick="edit_task(${task.id}, '${task.creator}')" onfocusout="finish_task_edit(this)"  contenteditable="false">${task.description}</div>
                        <div id="z_add_comment_${task.id}" class="comment"></div>
                        <details><summary class="comments_header">{{task_comments}}:</summary>`;
-            if (task.comments.length > 0) {  
-                task.comments.forEach(comm => {
-                    tmpHtml += `<div class="one_comment"><div class="comment_username">${comm.username}:</div><div class="comment_text">${comm.comment}</div>
+                if (task.comments.length > 0) {
+                    task.comments.forEach(comm => {
+                        tmpHtml += `<div class="one_comment"><div class="comment_username">${comm.username}:</div><div class="comment_text">${comm.comment}</div>
                                 <div class="comment_timestamp">${comm.created_at}</div></div>`;
-                });
+                    });
+                }
+
+                tmpHtml += `</details><div class="add_comments" onclick="add_comment(${task.id})">{{task_add_comment}}</div><hr class="task_line"/>`;
+                div.innerHTML = tmpHtml;
+                div.classList.add("task_card");
+                fragment.appendChild(div);
+            });
+            parentDiv.innerHTML = '';
+            parentDiv.appendChild(fragment);
+            const div = document.createElement('div');
+            div.innerHTML = `<div class="button-flex"><div class="close-task show-diagram" onclick="showDiagram()"> {{show_diagram}} </div> &#128202;</div>`;
+            parentDiv.appendChild(div);
+        }
+
+        //  начать редактирование текста задачи по-месту-нахождения в карточке задачи
+        function edit_task(task_id, creator) {
+            const task_div = document.getElementById("z_" + task_id);
+            const others = document.querySelectorAll('.content_editable_block');
+
+            if (task_div) {
+                if (!document.getElementById('comment_input')) {
+                    if (creator == userName) {
+                        if (task_div.contentEditable) {
+                            if ((task_div.contentEditable == "false") && (others.length == 0)) {
+                                scroll_switch.checked = false;
+                                task_div.contentEditable = "true";
+                                save_confirm_dialog.dataset.task_id = task_id;
+                                task_div.classList.add("content_editable_block");
+                                task_div.focus();
+                            }
+                        }
+                        event.stopPropagation();
+                    }
+                }
             }
-                       
-            tmpHtml += `</details><div class="add_comments" onclick="add_comment(${task.id})">{{task_add_comment}}</div><hr class="task_line"/>`;
-            div.innerHTML = tmpHtml;
-            div.classList.add("task_card");
-            fragment.appendChild(div);
+        }
+
+        // отказаться от сохраниения отредактированногго текста задачи
+        document.getElementById('save_cancel_btn').addEventListener('click', (e) => {
+            save_confirm_dialog.close(save_confirm_dialog.dataset.task_id);
+            save_confirm_dialog.dataset.task_id = 0;
+            e.stopPropagation();
         });
-        parentDiv.innerHTML = '';
-        parentDiv.appendChild(fragment);
-        const div = document.createElement('div');
-        div.innerHTML = `<div class="button-flex"><div class="close-task show-diagram" onclick="showDiagram()"> {{show_diagram}} </div> &#128202;</div>`;
-        parentDiv.appendChild(div);
-    }
 
-    //  начать редактирование текста задачи по-месту-нахождения в карточке задачи
-    function edit_task(task_id, creator) {
-        const task_div = document.getElementById("z_"+task_id);
-        const others = document.querySelectorAll('.content_editable_block');
-
-        if (task_div) {
-            if (!document.getElementById('comment_input')) {
-                if (creator == userName) {
-                    if (task_div.contentEditable) {
-                        if ((task_div.contentEditable == "false") && (others.length == 0)) {
-                            scroll_switch.checked = false;
-                            task_div.contentEditable = "true"; 
-                            save_confirm_dialog.dataset.task_id = task_id;
-                            task_div.classList.add("content_editable_block");
-                            task_div.focus();
+        // сохранить сделанные при редактировании задачи изменения
+        document.getElementById('save_confirm_btn').addEventListener('click', async (e) => {
+            console.log("task_id = ", save_confirm_dialog.dataset.task_id)
+            if (save_confirm_dialog.dataset.task_id) {
+                if (save_confirm_dialog.dataset.task_id > 0) {
+                    const task_div = document.getElementById("z_" + save_confirm_dialog.dataset.task_id);
+                    if (task_div) {
+                        try {
+                            const response = await fetch('/tasks/edit', {
+                                method: "POST",
+                                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                                credentials: 'include',
+                                body: JSON.stringify({
+                                    id: parseInt(save_confirm_dialog.dataset.task_id),
+                                    userid: parseInt('{{userid}}'),
+                                    messtext: task_div.innerText
+                                })
+                            });
+                            const data = await response.json();
+                            console.log(`Task id=${save_confirm_dialog.dataset.task_id} text edited - Server response:`, data);
+                        } catch (error) {
+                            console.error('Ошибка загрузки задач:', error);
+                            tasksDiv.classList.remove("taskDiv_opened");
                         }
                     }
-                    event.stopPropagation();
+                    save_confirm_dialog.dataset.task_id = 0;
                 }
             }
-        }
-    }
+            save_confirm_dialog.close();
+            e.stopPropagation();
+        });
 
-    // отказаться от сохраниения отредактированногго текста задачи
-    document.getElementById('save_cancel_btn').addEventListener('click', (e) => {
-        save_confirm_dialog.close(save_confirm_dialog.dataset.task_id);
-        save_confirm_dialog.dataset.task_id = 0;
-        e.stopPropagation();
-    });
-    
-    // сохранить сделанные при редактировании задачи изменения
-    document.getElementById('save_confirm_btn').addEventListener('click', async (e) => {
-        console.log("task_id = ", save_confirm_dialog.dataset.task_id)
-        if (save_confirm_dialog.dataset.task_id) {
-            if (save_confirm_dialog.dataset.task_id > 0) {
-                const task_div = document.getElementById("z_"+save_confirm_dialog.dataset.task_id);
-                if (task_div) {
-                    try {
-                        const response = await fetch('/tasks/edit', {
-                            method: "POST",
-                            headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                            credentials: 'include',
-                            body: JSON.stringify({ 
-                                id: parseInt(save_confirm_dialog.dataset.task_id),
-                                userid: parseInt('{{userid}}'),
-                                messtext: task_div.innerText
-                            })                        
-                        }); 
-                        const data = await response.json(); 
-                        console.log(`Task id=${save_confirm_dialog.dataset.task_id} text edited - Server response:`, data);
-                    } catch (error) {
-                        console.error('Ошибка загрузки задач:', error);
-                        tasksDiv.classList.remove("taskDiv_opened");
-                    }                    
+        // выйти из режима редактирования текста задачи по-месту-нахождения
+        function finish_task_edit(div) {
+            if (!document.getElementById('comment_input')) {
+                if (div) {
+                    if (div.contentEditable) {
+                        if (div.contentEditable == "true") {
+                            scroll_switch.checked = true;
+                            div.classList.remove("content_editable_block");
+                            div.contentEditable = "false";
+                        }
+                    }
                 }
-                save_confirm_dialog.dataset.task_id = 0;
+                event.stopPropagation();
             }
         }
-        save_confirm_dialog.close();
-        e.stopPropagation();
-    });
 
-    // выйти из режима редактирования текста задачи по-месту-нахождения
-    function finish_task_edit(div) {
-        if (!document.getElementById('comment_input')) {
-            if (div) {
-                if (div.contentEditable) {
-                    if (div.contentEditable == "true") {
-                        scroll_switch.checked = true;
-                        div.classList.remove("content_editable_block");
-                        div.contentEditable = "false";
-                    } 
-                }   
+        // Запросить задачи на бэк-энде
+        async function fetchTasks() {
+            try {
+                const response = await fetch('/tasks/get_tasks', { credentials: 'include' });
+                const data = await response.json();
+                if (data) {
+                    renderAllTasks(data);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки задач:', error);
+                tasksDiv.classList.remove("taskDiv_opened");
             }
-            event.stopPropagation();
         }
-    }
 
-    // Запросить задачи на бэк-энде
-    async function fetchTasks() {
-        try {
-            const response = await fetch('/tasks/get_tasks', {credentials: 'include'}); 
-            const data = await response.json(); 
-            if (data) {         
-                renderAllTasks(data);
+
+        // Запросить важные документы на бэк-энде
+        async function fetchDocuments() {
+            try {
+                const response = await fetch('/documents/get', { credentials: 'include' });
+                const data = await response.json();
+                if (data) {
+                    renderAllDocuments(data);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки задач:', error);
+                tasksDiv.classList.remove("taskDiv_opened");
             }
-        } catch (error) {
-            console.error('Ошибка загрузки задач:', error);
-            tasksDiv.classList.remove("taskDiv_opened");
         }
-    }
 
+        // Создать карточки с важными документами из json-массива    
+        function renderAllDocuments(data) {
+            const parentDiv = document.getElementById("task-list");
+            const fragment = document.createDocumentFragment();
 
-    // Запросить важные документы на бэк-энде
-    async function fetchDocuments() {
-        try {
-            const response = await fetch('/documents/get', {credentials: 'include'}); 
-            const data = await response.json(); 
-            if (data) {         
-                renderAllDocuments(data);
-            }
-        } catch (error) {
-            console.error('Ошибка загрузки задач:', error);
-            tasksDiv.classList.remove("taskDiv_opened");
-        }
-    }    
-
-    // Создать карточки с важными документами из json-массива    
-    function renderAllDocuments(data) {
-        const parentDiv = document.getElementById("task-list");
-        const fragment = document.createDocumentFragment();
-
-        data.forEach(docs => {
-            const div = document.createElement('div');
-            div.innerHTML = `<div class="one-document"><span id="doc_download_${docs.mess_id}" title="{{download_the_ifile_title}}" class="download-span" onclick="window.location.href ='/documents/download/${docs.mess_id}'">&#11015;</span> 
+            data.forEach(docs => {
+                const div = document.createElement('div');
+                div.innerHTML = `<div class="one-document"><span id="doc_download_${docs.mess_id}" title="{{download_the_ifile_title}}" class="download-span" onclick="window.location.href ='/documents/download/${docs.mess_id}'">&#11015;</span> 
                 <span class="document-filename" onclick="window.location.href ='/documents/download/${docs.mess_id}'" title="{{download_the_ifile_title}}">${docs.filename}</span> 
                 <span><span id="doc_notes_${docs.mess_id}" title="{{add_description_title}}" onclick="show_notes_dialog(${docs.mess_id},'${docs.notes}')">&#128221;</span>&nbsp;<span id="doc_remove_${docs.mess_id}" title="{{remove_imp_file_question}}" onclick="remove_document(${docs.mess_id})">&#128686;</span></span></div>
                 <hr class="task_header_line"/><div class="docs_notes">${docs.notes}</div><hr class="task_line"/>`;
-            div.classList.add("task_card");
-            div.dataset.id = docs.mess_id;
-            fragment.appendChild(div);
-        });
-        parentDiv.innerHTML = '';
-        parentDiv.appendChild(fragment);
-    }
-
-    // Вызвать диалог подтверждения операции закрытия задачи
-    function closeTask(id) {
-        task_id = id;
-        dialog.showModal();
-    }
-
-    // Закрыть задачу - запрос на бэк-энд
-    async function closeTaskRequest(){
-        try {
-            const response = await fetch(`/tasks/close/${task_id}`, {credentials: 'include', method: "DELETE"}); 
-            const data = await response.json(); 
-            if (data) {   
-                if (data.result == "ok") {      
-                    fetchTasks();
-                }
-            }
-        } catch (error) {
-            console.error('Ошибка завершения задачи:', error);
-            tasksDiv.classList.remove("taskDiv_opened");
-        } 
-        task_id = 0;      
-    }
-
-
-    function display_context_menu(e, id) {
-        const menuWidth = menu.offsetWidth;
-        const menuHeight = menu.offsetHeight;
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
-        
-        let x = e.clientX;
-        let y = e.clientY;
-        // 2. Проверка правого края: если меню не влезает, рисуем его слева от курсора
-        if (x + menuWidth > windowWidth) {
-        x = x - menuWidth - 5;
-        }
-        // 3. Проверка нижнего края: если меню не влезает, рисуем его выше курсора
-        if (y + menuHeight > windowHeight) {
-        y = y - menuHeight - 5;
-        }
-        // Применяем координаты
-        menu.style.left = `${x}px`;
-        menu.style.top = `${y}px`;
-
-        const mess_block = document.getElementById("mess_"+id);
-        const readItem = menu.querySelector('[data-action="read"]');
-        const likeItem = menu.querySelector('[data-action="like"]');
-        const taskItem = menu.querySelector('[data-action="task"]');
-        const delItem  = menu.querySelector('[data-action="delete"]');
-        const docsItem  = menu.querySelector('[data-action="docs"]');
-
-        readItem.classList.remove('disabled');
-        likeItem.classList.remove('disabled');
-        taskItem.classList.remove('disabled');
-        docsItem.classList.remove('disabled');
-
-        if (mess_block.dataset.username == userName) { 
-            readItem.classList.add('disabled');
-            likeItem.classList.add('disabled');
-            delItem.classList.remove('disabled');
-        } else {
-            delItem.classList.add('disabled');
-        } 
-        if (mess_block.dataset.noTask == 1) {
-            taskItem.classList.add('disabled');
-        }
-        if (mess_block.dataset.noFiles == 1) {
-            docsItem.classList.add('disabled');
+                div.classList.add("task_card");
+                div.dataset.id = docs.mess_id;
+                fragment.appendChild(div);
+            });
+            parentDiv.innerHTML = '';
+            parentDiv.appendChild(fragment);
         }
 
-        menu.dataset.message_id = id;
-        menu.style.display = 'block'; // Показываем меню   
-        e.stopPropagation();        
-    }
-
-    // Скрываем меню при клике в любом другом месте страницы
-    window.addEventListener('click', () => {
-        menu.style.display = 'none';
-    });
-
-    // обработка события "клик на строке всплывающего меню"
-    menu.addEventListener('click', async (event) => {
-        // Находим ближайший элемент с классом menu-item (на случай, если внутри есть иконки)
-        const item = event.target.closest('.menu-item');
-        const theMenu = event.target.closest('#custom-menu');
-        let id = 0;
-        if (theMenu) {
-            id = theMenu.dataset.message_id;
+        // Вызвать диалог подтверждения операции закрытия задачи
+        function closeTask(id) {
+            task_id = id;
+            dialog.showModal();
         }
 
-        if ((!item) || (id == 0)) return; // Если кликнули по разделителю <hr> или фону, ничего не делаем
-
-        const action = item.dataset.action; // Получаем значение из data-action
-        const mess_block = document.getElementById("mess_"+id);
-
-        switch (action) {
-            case 'read':
-                if ((mess_block.dataset)&&(mess_block.dataset.username != userName) && (mess_block.dataset.uniqJson != ""))
-                try {
-                    console.log("Отмечаем сообщение прочитанным:", mess_block.dataset.uniqJson);
-                    const response = await fetch('/messages/check_read', {
-                        method: "POST",
-                        headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                        body: mess_block.dataset.uniqJson,                
-                        credentials: 'include'
-                    }); 
-                    const data = await response.json();
-                    console.log(data);
-                    data.forEach(msg => {
-                        const elem = document.getElementById("badge_"+msg.mess_id)
-                        elem.className ="number-badge";
-                        elem.innerHTML = String(msg.cnt);
-                    });
-                } catch (error) {
-                    console.error('Ошибка загрузки сообщений:', error);
-                }
-                break;
-            case 'like':
-                console.log('Выбрано: LIKE  ');
-                like_click(id, mess_block.dataset.username)
-                break;
-            case 'task':
-                scroll_switch.checked = false;
-                document.getElementById("task_id").value = id;
-                tasksDiv.classList.add("taskDiv_opened");
-                break;
-            case 'docs':
-                console.log('Выбрано: docs');
-                add_new_document(id);
-                break;            
-            case 'delete':
-                deleteDlg.dataset.id = id;
-                deleteDlg.showModal();
-                break;
-            }
-        menu.style.display = 'none';
-    });
-
-    // при подтверждении "готов удалить сообщение" - удалить сообщение и закрыть диалог
-    del_confirm.addEventListener('click', async () => {
-        console.log('Выбрано: Удалить сообщение '+deleteDlg.dataset.id);
-        const response = await fetch('/messages/delete/'+deleteDlg.dataset.id, {credentials: 'include', method: 'DELETE'}); 
-        const data = await response.json();
-        if (data) {   
-            if (data.result == "ok") {  
-                lastId = 0;    
-                fetchMessages();
-            }
-        }
-        deleteDlg.close();
-    });
-
-    // Закрыть при отмене - отказаться от удаления и закрыть диалог
-    del_cancel.addEventListener('click', () => {
-        deleteDlg.close();
-        console.log("Удаление Отменено");
-    });
-
-    //
-    document.addEventListener('keydown', (e) => {
-        const task_edit_block = document.querySelectorAll('.content_editable_block');
-
-        if (event.key === 'Escape') { // нажата Esc
-            if (menu) {
-                menu.style.display = 'none';
-            }
-
-            if (task_edit_block.length > 0) {
-                scroll_switch.checked = true;
-                task_edit_block.forEach( elem => {
-                    elem.classList.remove("content_editable_block");
-                    elem.contentEditable = "false";
-                });
-            }
-        }   
-        
-        if (task_edit_block.length > 0) {  // находимся в режиме редактирования задачи
-            if (event.key === 'Enter') {   // нажали Enter
-                scroll_switch.checked = true;
-                task_edit_block[0].classList.remove("content_editable_block");
-                task_edit_block[0].contentEditable = "false";
-                e.preventDefault();
-                save_confirm_dialog.showModal();  // диалог подтверждения сохранения изменений
-            }
-        } 
-        e.stopPropagation();  
-    });
-    
-    // добавить в хранилище важных документов новый документ - запрос на бэк-энд
-    async function add_new_document(id) {
-        const response = await fetch("/documents/add", {
-            method: "POST",
-            headers: { "Accept": "application/json", "Content-Type": "application/json" },
-            credentials: 'include',
-            body: JSON.stringify({ 
-                mess_id: id,
-            })
-        });
-        const data = await response.json(); 
-        console.log("Add new document - Server response:", data);
-    }
-
-    //  важный документ оказался неважным - удалить!  запрос на бэк-энд
-    async function remove_document(id) {
-        const response = await fetch("/documents/delete/"+id, {method: "DELETE", credentials: 'include'}); 
-        const data = await response.json(); 
-        if (data) {   
-            if (data.result == "ok") {  
-                console.log("Документ удален");    
-                fetchDocuments();
-            }
-        }
-    }
-
-    function show_notes_dialog(id, note) {
-        const description = document.getElementById('description');
-        notesDlg.dataset.id = id;
-        description.value = note;
-        notesDlg.showModal()
-    }
-
-    note_cancel.addEventListener('click', (e) => {
-        notesDlg.close();
-        e.stopPropagation();        
-    });
-
-    note_confirm.addEventListener('click', async (e) => {
-        const description = document.getElementById('description');
-        console.log('Выбрано: Сохранить описание Докум.id='+notesDlg.dataset.id);
-        const response = await fetch('/documents/add_notes', {
-            method: 'POST',
-            headers: { "Accept": "application/json", "Content-Type": "application/json" },
-            credentials: 'include',
-            body: JSON.stringify({ 
-                mess_id: notesDlg.dataset.id,
-                notes: description.value
-            })            
-        }); 
-        const data = await response.json();
-        if (data) {   
-            if (data.result == "OK") {  
-                console.log(`Описание документа ${notesDlg.dataset.id} изменено`);    
-                fetchDocuments();
-            }
-        }
-        notesDlg.close();
-        e.stopPropagation();        
-    });
-
-    fio_cancel.addEventListener('click', (e) => {
-        userDlg.close();
-        e.stopPropagation();        
-    });
-
-    fio_confirm.addEventListener('click', async (e) => {
-        console.log('Выбрано: Сохранить описание Докум.id='+userDlg.dataset.userid);
-        const response = await fetch('/users/fio', {
-            method: 'POST',
-            headers: { "Accept": "application/json", "Content-Type": "application/json" },
-            credentials: 'include',
-            body: JSON.stringify({ 
-                userid: userDlg.dataset.userid,
-                fio: document.getElementById('fio').value
-            })            
-        }); 
-        const data = await response.json();
-        if (data) {   
-            if (data.result == "OK") {  
-                console.log(`Фамилия пользователя ${userName} изменена`);    
-                fetchActivUsers();
-            }
-        }
-        userDlg.close();
-        e.stopPropagation();        
-    });
-
-    function show_user_dialog() {
-        document.getElementById('fio').value = userDlg.dataset.fio; 
-        userDlg.showModal();
-    }  
-    
-    function add_comment(task_id) {
-        const others = document.querySelector('#comment_input');
-        if (!others) {
-            const add_comments = document.querySelectorAll('.add_comments');
-            const parent = document.getElementById("z_add_comment_"+task_id);
-   
-            let html_str = `<textarea id="comment_input" name="comment_input" class="comment_input" maxlength="1000" rows="5" cols="40" placeholder="{{task_input_comment_placeholder}}"></textarea>
-                            <button class="comment-button" id="save_comment_${task_id}">{{save_task_comment_btn}}</button> <button class="comment-button" onclick="cancel_comment(${task_id})">{{comment_cancel_btn}}</button> `;  
-            parent.innerHTML = html_str; 
-            add_comments.forEach(elem => { elem.classList.add("hide") });
-
-            document.querySelector('#save_comment_'+task_id).addEventListener('click', async (e) => {
-                console.log('Сохранить комментарий к задаче id='+task_id);
-                let comment_text = document.getElementById('comment_input').value;
-                const response = await fetch('/comments/add', {
-                    method: 'POST',
-                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                    credentials: 'include',
-                    body: JSON.stringify({ 
-                        task_id: task_id,
-                        creator: parseInt('{{userid}}'),
-                        comment: comment_text
-                    })           
-                });
-                const data = await response.json(); 
-                if (data) {   
-                    if (data.result == "ok") {      
+        // Закрыть задачу - запрос на бэк-энд
+        async function closeTaskRequest() {
+            try {
+                const response = await fetch(`/tasks/close/${task_id}`, { credentials: 'include', method: "DELETE" });
+                const data = await response.json();
+                if (data) {
+                    if (data.result == "ok") {
                         fetchTasks();
                     }
-                }   
-                add_comments.forEach(elem => { elem.classList.remove("hide") });   
-                parent.innerHTML = "";
+                }
+            } catch (error) {
+                console.error('Ошибка завершения задачи:', error);
+                tasksDiv.classList.remove("taskDiv_opened");
+            }
+            task_id = 0;
+        }
+
+
+        function display_context_menu(e, id) {
+            const menuWidth = menu.offsetWidth;
+            const menuHeight = menu.offsetHeight;
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+
+            let x = e.clientX;
+            let y = e.clientY;
+            // 2. Проверка правого края: если меню не влезает, рисуем его слева от курсора
+            if (x + menuWidth > windowWidth) {
+                x = x - menuWidth - 5;
+            }
+            // 3. Проверка нижнего края: если меню не влезает, рисуем его выше курсора
+            if (y + menuHeight > windowHeight) {
+                y = y - menuHeight - 5;
+            }
+            // Применяем координаты
+            menu.style.left = `${x}px`;
+            menu.style.top = `${y}px`;
+
+            const mess_block = document.getElementById("mess_" + id);
+            const readItem = menu.querySelector('[data-action="read"]');
+            const likeItem = menu.querySelector('[data-action="like"]');
+            const taskItem = menu.querySelector('[data-action="task"]');
+            const delItem = menu.querySelector('[data-action="delete"]');
+            const docsItem = menu.querySelector('[data-action="docs"]');
+
+            readItem.classList.remove('disabled');
+            likeItem.classList.remove('disabled');
+            taskItem.classList.remove('disabled');
+            docsItem.classList.remove('disabled');
+
+            if (mess_block.dataset.username == userName) {
+                readItem.classList.add('disabled');
+                likeItem.classList.add('disabled');
+                delItem.classList.remove('disabled');
+            } else {
+                delItem.classList.add('disabled');
+            }
+            if (mess_block.dataset.noTask == 1) {
+                taskItem.classList.add('disabled');
+            }
+            if (mess_block.dataset.noFiles == 1) {
+                docsItem.classList.add('disabled');
+            }
+
+            menu.dataset.message_id = id;
+            menu.style.display = 'block'; // Показываем меню   
+            e.stopPropagation();
+        }
+
+        // Скрываем меню при клике в любом другом месте страницы
+        window.addEventListener('click', () => {
+            menu.style.display = 'none';
+        });
+
+        // обработка события "клик на строке всплывающего меню"
+        menu.addEventListener('click', async (event) => {
+            // Находим ближайший элемент с классом menu-item (на случай, если внутри есть иконки)
+            const item = event.target.closest('.menu-item');
+            const theMenu = event.target.closest('#custom-menu');
+            let id = 0;
+            if (theMenu) {
+                id = theMenu.dataset.message_id;
+            }
+
+            if ((!item) || (id == 0)) return; // Если кликнули по разделителю <hr> или фону, ничего не делаем
+
+            const action = item.dataset.action; // Получаем значение из data-action
+            const mess_block = document.getElementById("mess_" + id);
+
+            switch (action) {
+                case 'read':
+                    if ((mess_block.dataset) && (mess_block.dataset.username != userName) && (mess_block.dataset.uniqJson != ""))
+                        try {
+                            console.log("Отмечаем сообщение прочитанным:", mess_block.dataset.uniqJson);
+                            const response = await fetch('/messages/check_read', {
+                                method: "POST",
+                                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                                body: mess_block.dataset.uniqJson,
+                                credentials: 'include'
+                            });
+                            const data = await response.json();
+                            console.log(data);
+                            data.forEach(msg => {
+                                const elem = document.getElementById("badge_" + msg.mess_id)
+                                elem.className = "number-badge";
+                                elem.innerHTML = String(msg.cnt);
+                            });
+                        } catch (error) {
+                            console.error('Ошибка загрузки сообщений:', error);
+                        }
+                    break;
+                case 'like':
+                    console.log('Выбрано: LIKE  ');
+                    like_click(id, mess_block.dataset.username)
+                    break;
+                case 'task':
+                    scroll_switch.checked = false;
+                    document.getElementById("task_id").value = id;
+                    tasksDiv.classList.add("taskDiv_opened");
+                    break;
+                case 'docs':
+                    console.log('Выбрано: docs');
+                    add_new_document(id);
+                    break;
+                case 'delete':
+                    deleteDlg.dataset.id = id;
+                    deleteDlg.showModal();
+                    break;
+            }
+            menu.style.display = 'none';
+        });
+
+        // при подтверждении "готов удалить сообщение" - удалить сообщение и закрыть диалог
+        del_confirm.addEventListener('click', async () => {
+            console.log('Выбрано: Удалить сообщение ' + deleteDlg.dataset.id);
+            const response = await fetch('/messages/delete/' + deleteDlg.dataset.id, { credentials: 'include', method: 'DELETE' });
+            const data = await response.json();
+            if (data) {
+                if (data.result == "ok") {
+                    lastId = 0;
+                    fetchMessages();
+                }
+            }
+            deleteDlg.close();
+        });
+
+        // Закрыть при отмене - отказаться от удаления и закрыть диалог
+        del_cancel.addEventListener('click', () => {
+            deleteDlg.close();
+            console.log("Удаление Отменено");
+        });
+
+        //
+        document.addEventListener('keydown', (e) => {
+            const task_edit_block = document.querySelectorAll('.content_editable_block');
+
+            if (event.key === 'Escape') { // нажата Esc
+                if (menu) {
+                    menu.style.display = 'none';
+                }
+
+                if (task_edit_block.length > 0) {
+                    scroll_switch.checked = true;
+                    task_edit_block.forEach(elem => {
+                        elem.classList.remove("content_editable_block");
+                        elem.contentEditable = "false";
+                    });
+                }
+            }
+
+            if (task_edit_block.length > 0) {  // находимся в режиме редактирования задачи
+                if (event.key === 'Enter') {   // нажали Enter
+                    scroll_switch.checked = true;
+                    task_edit_block[0].classList.remove("content_editable_block");
+                    task_edit_block[0].contentEditable = "false";
+                    e.preventDefault();
+                    save_confirm_dialog.showModal();  // диалог подтверждения сохранения изменений
+                }
+            }
+            e.stopPropagation();
+        });
+
+        // добавить в хранилище важных документов новый документ - запрос на бэк-энд
+        async function add_new_document(id) {
+            const response = await fetch("/documents/add", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                credentials: 'include',
+                body: JSON.stringify({
+                    mess_id: id,
+                })
             });
-        }
-    }
-
-    function cancel_comment(id) {
-        const div = document.getElementById('z_add_comment_'+id);
-        div.innerHTML = "";
-        document.querySelectorAll('.add_comments').forEach(elem => { elem.classList.remove("hide") });
-        event.stopPropagation();
-    }
-
-    async function showDiagram() {
-        let now = new Date();
-        now.setDate(now.getDate() - 30);
-        const gant = document.getElementById('Gant');
-        gant.innerHTML = '';
-
-        for (let i = 0; i < 60; i++) {
-            let div = document.createElement('div');
-            now.setDate(now.getDate() + 1);
-
-            if (now.toISOString().split('T')[0] == new Date().toISOString().split('T')[0]) {
-                div.style = "color: red;";
-            }
-
-            let month1 = "0" + (now.getMonth() + 1);
-            let day1 = now.getDate();
-
-            div.innerText = "" + day1 + "." + month1.slice(-2);
-            div.className = "grid-header-dates";
-            gant.append(div);
+            const data = await response.json();
+            console.log("Add new document - Server response:", data);
         }
 
-        try {
-            let i = 2;
-            const response = await fetch('/tasks/gant', {credentials: 'include'}); 
-            const data = await response.json(); 
-            if (data) {        
-                data.forEach(task => {
-                    let div = document.createElement('div');
-                    let startCol = Math.max(task.startcol + 30, 1);
-                    let endCol = Math.min(task.endcol + 31, 61);
-                    div.className = 'task-bar';
-                    if (task.expired > 0) {
-                        div.classList.add('expired_task');
-                        endCol = 31;
-                    }
-                    div.style.gridColumn = `${startCol} / ${endCol}`;
-                    div.style.gridRow = i;
-                    div.title = `📌${task.title}\n📅{{deadline}}: ${task.deadline}\n👤{{executor}}: ${task.executor}`;
-                    i++;
-                    div.innerText = task.title + ` (${task.executor})`;
-                    gant.appendChild(div); 
-                    console.log('start_col=', startCol, 'end_col=', endCol);   
-                });
+        //  важный документ оказался неважным - удалить!  запрос на бэк-энд
+        async function remove_document(id) {
+            const response = await fetch("/documents/delete/" + id, { method: "DELETE", credentials: 'include' });
+            const data = await response.json();
+            if (data) {
+                if (data.result == "ok") {
+                    console.log("Документ удален");
+                    fetchDocuments();
+                }
             }
-        } catch (error) {
-            console.error('Diagram data load error:', error);
-        }        
-        diagramDlg.showModal();
-    }
+        }
 
-    document.getElementById('close_diagram_btn').addEventListener('click', () => { diagramDlg.close(); });
+        function show_notes_dialog(id, note) {
+            const description = document.getElementById('description');
+            notesDlg.dataset.id = id;
+            description.value = note;
+            notesDlg.showModal()
+        }
 
+        note_cancel.addEventListener('click', (e) => {
+            notesDlg.close();
+            e.stopPropagation();
+        });
 
-    // Edit Task Deadline in dialog
-    function edit_deadline(task_id, dDate, creator) {
-        if (creator == '{{username}}') {
-            event.preventDefault();
-            const dEdit = document.getElementById('edit_deadline');
-            dEdit.value = dDate.substring(6,10)+'-'+dDate.substring(3,5)+'-'+dDate.substring(0,2);
-            deadlineDialog.dataset.id = task_id;
-            document.getElementById('deadline_cancel').addEventListener('click', (e) => { deadlineDialog.close(); e.stopPropagation(); });
-            document.getElementById('deadline_confirm').addEventListener('click', async (e) => {
-                let new_data = dEdit.value;
-                document.getElementById('deadline_'+task_id).innerHTML = "{{task_deadline}}: <b style='color:#128256'>"+new_data+"</b>";
-                try {
-                    const response = await fetch('/tasks/deadline/edit', {
-                        method: "POST",
+        note_confirm.addEventListener('click', async (e) => {
+            const description = document.getElementById('description');
+            console.log('Выбрано: Сохранить описание Докум.id=' + notesDlg.dataset.id);
+            const response = await fetch('/documents/add_notes', {
+                method: 'POST',
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                credentials: 'include',
+                body: JSON.stringify({
+                    mess_id: notesDlg.dataset.id,
+                    notes: description.value
+                })
+            });
+            const data = await response.json();
+            if (data) {
+                if (data.result == "OK") {
+                    console.log(`Описание документа ${notesDlg.dataset.id} изменено`);
+                    fetchDocuments();
+                }
+            }
+            notesDlg.close();
+            e.stopPropagation();
+        });
+
+        fio_cancel.addEventListener('click', (e) => {
+            userDlg.close();
+            e.stopPropagation();
+        });
+
+        fio_confirm.addEventListener('click', async (e) => {
+            console.log('Выбрано: Сохранить описание Докум.id=' + userDlg.dataset.userid);
+            const response = await fetch('/users/fio', {
+                method: 'POST',
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                credentials: 'include',
+                body: JSON.stringify({
+                    userid: userDlg.dataset.userid,
+                    fio: document.getElementById('fio').value
+                })
+            });
+            const data = await response.json();
+            if (data) {
+                if (data.result == "OK") {
+                    console.log(`Фамилия пользователя ${userName} изменена`);
+                    fetchActivUsers();
+                }
+            }
+            userDlg.close();
+            e.stopPropagation();
+        });
+
+        function show_user_dialog() {
+            document.getElementById('fio').value = userDlg.dataset.fio;
+            userDlg.showModal();
+        }
+
+        function add_comment(task_id) {
+            const others = document.querySelector('#comment_input');
+            if (!others) {
+                const add_comments = document.querySelectorAll('.add_comments');
+                const parent = document.getElementById("z_add_comment_" + task_id);
+
+                let html_str = `<textarea id="comment_input" name="comment_input" class="comment_input" maxlength="1000" rows="5" cols="40" placeholder="{{task_input_comment_placeholder}}"></textarea>
+                            <button class="comment-button" id="save_comment_${task_id}">{{save_task_comment_btn}}</button> <button class="comment-button" onclick="cancel_comment(${task_id})">{{comment_cancel_btn}}</button> `;
+                parent.innerHTML = html_str;
+                add_comments.forEach(elem => { elem.classList.add("hide") });
+
+                document.querySelector('#save_comment_' + task_id).addEventListener('click', async (e) => {
+                    console.log('Сохранить комментарий к задаче id=' + task_id);
+                    let comment_text = document.getElementById('comment_input').value;
+                    const response = await fetch('/comments/add', {
+                        method: 'POST',
                         headers: { "Accept": "application/json", "Content-Type": "application/json" },
                         credentials: 'include',
-                        body: JSON.stringify({ 
-                            id: parseInt(task_id),
-                            userid: parseInt('{{userid}}'),
-                            deadline: dEdit.value
-                        })                        
-                    }); 
-                    const data = await response.json(); 
-                    console.log(`Task id=${task_id} deadline edited - Server response:`, data);
-                } catch (error) {
-                    console.error('Task deadline editing error:', error);
-                    tasksDiv.classList.remove("taskDiv_opened");
-                } 
-                e.stopPropagation(); 
-                deadlineDialog.close();               
-            });
-            deadlineDialog.showModal();
+                        body: JSON.stringify({
+                            task_id: task_id,
+                            creator: parseInt('{{userid}}'),
+                            comment: comment_text
+                        })
+                    });
+                    const data = await response.json();
+                    if (data) {
+                        if (data.result == "ok") {
+                            fetchTasks();
+                        }
+                    }
+                    add_comments.forEach(elem => { elem.classList.remove("hide") });
+                    parent.innerHTML = "";
+                });
+            }
         }
-    }
-</script>
+
+        function cancel_comment(id) {
+            const div = document.getElementById('z_add_comment_' + id);
+            div.innerHTML = "";
+            document.querySelectorAll('.add_comments').forEach(elem => { elem.classList.remove("hide") });
+            event.stopPropagation();
+        }
+
+        async function showDiagram() {
+            let now = new Date();
+            now.setDate(now.getDate() - 30);
+            const gant = document.getElementById('Gant');
+            gant.innerHTML = '';
+
+            for (let i = 0; i < 60; i++) {
+                let div = document.createElement('div');
+                now.setDate(now.getDate() + 1);
+
+                if (now.toISOString().split('T')[0] == new Date().toISOString().split('T')[0]) {
+                    div.style = "color: red;";
+                }
+
+                let month1 = "0" + (now.getMonth() + 1);
+                let day1 = now.getDate();
+
+                div.innerText = "" + day1 + "." + month1.slice(-2);
+                div.className = "grid-header-dates";
+                gant.append(div);
+            }
+
+            try {
+                let i = 2;
+                const response = await fetch('/tasks/gant', { credentials: 'include' });
+                const data = await response.json();
+                if (data) {
+                    data.forEach(task => {
+                        let div = document.createElement('div');
+                        let startCol = Math.max(task.startcol + 30, 1);
+                        let endCol = Math.min(task.endcol + 31, 61);
+                        div.className = 'task-bar';
+                        if (task.expired > 0) {
+                            div.classList.add('expired_task');
+                            endCol = 31;
+                        }
+                        div.style.gridColumn = `${startCol} / ${endCol}`;
+                        div.style.gridRow = i;
+                        div.title = `📌${task.title}\n📅{{deadline}}: ${task.deadline}\n👤{{executor}}: ${task.executor}`;
+                        i++;
+                        div.innerText = task.title + ` (${task.executor})`;
+                        gant.appendChild(div);
+                        console.log('start_col=', startCol, 'end_col=', endCol);
+                    });
+                }
+            } catch (error) {
+                console.error('Diagram data load error:', error);
+            }
+            diagramDlg.showModal();
+        }
+
+        document.getElementById('close_diagram_btn').addEventListener('click', () => { diagramDlg.close(); });
+
+
+        // Edit Task Deadline in dialog
+        function edit_deadline(task_id, dDate, creator) {
+            if (creator == '{{username}}') {
+                event.preventDefault();
+                const dEdit = document.getElementById('edit_deadline');
+                dEdit.value = dDate.substring(6, 10) + '-' + dDate.substring(3, 5) + '-' + dDate.substring(0, 2);
+                deadlineDialog.dataset.id = task_id;
+                document.getElementById('deadline_cancel').addEventListener('click', (e) => { deadlineDialog.close(); e.stopPropagation(); });
+                document.getElementById('deadline_confirm').addEventListener('click', async (e) => {
+                    let new_data = dEdit.value;
+                    document.getElementById('deadline_' + task_id).innerHTML = "{{task_deadline}}: <b style='color:#128256'>" + new_data + "</b>";
+                    try {
+                        const response = await fetch('/tasks/deadline/edit', {
+                            method: "POST",
+                            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                            credentials: 'include',
+                            body: JSON.stringify({
+                                id: parseInt(task_id),
+                                userid: parseInt('{{userid}}'),
+                                deadline: dEdit.value
+                            })
+                        });
+                        const data = await response.json();
+                        console.log(`Task id=${task_id} deadline edited - Server response:`, data);
+                    } catch (error) {
+                        console.error('Task deadline editing error:', error);
+                        tasksDiv.classList.remove("taskDiv_opened");
+                    }
+                    e.stopPropagation();
+                    deadlineDialog.close();
+                });
+                deadlineDialog.showModal();
+            }
+        }
+    </script>
 </body>
+
 </html>
