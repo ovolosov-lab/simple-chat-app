@@ -9,15 +9,15 @@ from models import UserInfo
 #SECRET_KEY = "927_C,m03856_,shfcgfnm_12spar!001_&90"
 #ALGORITHM = "HS256"
 
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.now() + timedelta(minutes=settings.access_token_expire_minutes)
+def create_access_token(data: dict) -> str:
+    to_encode: dict = data.copy()
+    expire: datetime = datetime.now() + timedelta(minutes=settings.access_token_expire_minutes)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
 # 1. Функция-зависимость для проверки токена
-async def get_current_user(request: Request):
+async def get_current_user(request: Request) -> UserInfo:
     # Достаем токен из куки 'access_token'
     token = request.cookies.get("access_token")
     

@@ -17,4 +17,5 @@ test_main.py
 *.log
 
 .vscode/
+.idea/
 

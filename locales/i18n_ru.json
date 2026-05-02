@@ -16,7 +16,7 @@
     "reg_submit_btn": "Зарегистрироваться",
     "switch_label": "Прокрутка вниз",
     "app_name": "Коллеги",
-    "searchInput_placeholder": "Что ищем?",
+    "searchInput_placeholder": "Введите фразу для поиска?",
     "searchBtn": "Поиск по фразам в сообщениях",
     "tasks_docs_title": "В хранилище документов", 
     "get_history_btn_title": "Загрузить более ранние сообщения",
@@ -97,5 +97,6 @@
     "executor": "Ответственный", 
     "the_same_file": "Такой файл уже отправляли", 
     "welcome": "welcome_ru.json",
-   "deadline_header": "Edit the task deadline"    
+   "deadline_header": "Изменить срок исполнения",
+   "DocumDelete_question": "Удалить документ ?"    
 }   

@@ -27,9 +27,9 @@ async def get_session():
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
-async def db_connection_check():
+async def db_connection_check() -> None:
     """Database connection check at application startup. If the connection fails, the application will not start."""
-    retries = 5
+    retries: int = 5
     while retries > 0:
         try:
             async with engine.connect() as conn:
@@ -46,7 +46,7 @@ async def db_connection_check():
     raise RuntimeError("Failed to connect to the database. Application startup aborted.")
 
 
-async def user_exists(username: str, session: SessionDep):
+async def user_exists(username: str, session: SessionDep) -> bool:
     sql = text("SELECT userid FROM users WHERE username = :uname LIMIT 1")
     result = await session.execute(sql, {"uname": username}) 
     row = result.first()
@@ -56,7 +56,7 @@ async def user_exists(username: str, session: SessionDep):
         return False   
 
 
-async def check_user(username: str, password: str, session: SessionDep):
+async def check_user(username: str, password: str, session: SessionDep) -> int:
     sql = text("SELECT userid, password FROM users WHERE username = :uname LIMIT 1")
     result = await session.execute(sql, {"uname": username}) 
     row = result.first()

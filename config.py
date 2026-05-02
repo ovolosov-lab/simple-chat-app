@@ -118,7 +118,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env")
 
 @lru_cache()
-def get_settings():
+def get_settings() -> Settings:
     """Используем lru_cache, чтобы настройки считывались из файла только один раз"""
     return Settings() # type: ignore
 

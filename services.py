@@ -23,19 +23,19 @@ from tokens import create_access_token, get_current_user
 personal = list()
 
 
-async def create_new_user(new_user: Annotated[NewUser, Form()], session: SessionDep):
+async def create_new_user(new_user: Annotated[NewUser, Form()], session: SessionDep) -> RedirectResponse:
     newUserOrm = UserOrm(username=new_user.username, password=new_user.password1, active=False, fio=new_user.fio)
     session.add(newUserOrm)
     await session.commit() 
  
-    userid = await check_user(new_user.username, new_user.password1, session) 
-    token = create_access_token(data={"username": new_user.username, "userid": str(userid)})
-    response = RedirectResponse(url="/messages", status_code=303)
+    userid: int = await check_user(new_user.username, new_user.password1, session) 
+    token: str = create_access_token(data={"username": new_user.username, "userid": str(userid)})
+    response: RedirectResponse = RedirectResponse(url="/messages", status_code=303)
     response.set_cookie(key="access_token", value=token, httponly=True)
     return response
 
 
-async def background_checks(session_factory: async_sessionmaker):
+async def background_checks(session_factory: async_sessionmaker) -> None:
     logger.info("Activity check started")
     async with session_factory() as session:
         sql = text("""
@@ -67,7 +67,7 @@ class ProtectedStaticFiles(StaticFiles):
         
 
 def no_have_such_message(addr: int, sender: str, messtext: str) -> bool: 
-    no_found = True   
+    no_found: bool = True   
     for mess in personal:
         if (mess['to'] == addr) and (mess['from'] == sender):
             if ((datetime.now() - mess['created_at']).total_seconds() < 4) or (mess['messtext'] == messtext):
@@ -76,7 +76,7 @@ def no_have_such_message(addr: int, sender: str, messtext: str) -> bool:
     return no_found       
 
 
-def get_personal_messages(userid: int):
+def get_personal_messages(userid: int) -> list | dict:
     for i in range(0, len(personal)):
         mess = personal[i]
         if mess['to'] == userid:
@@ -84,7 +84,7 @@ def get_personal_messages(userid: int):
             mess_text = mess['messtext']
             del personal[i]
             return [{'from': sender, 'messtext': mess_text}] 
-    return {}        
+    return {}       
 
 
 # Функции для всего блока работы с файлами
@@ -128,7 +128,7 @@ async def save_user_file_to_disk(userName: str, UPLOAD_DIR: str, file: UploadFil
     return {"error": "OK", "ext": extension, "unique_filename": unique_filename, "orig_filename": origFileName}   
 
 
-def delete_file_from_disk(filename: str, upload_dir: str):
+def delete_file_from_disk(filename: str, upload_dir: str) -> bool:
     file_path = os.path.join(upload_dir, filename)   
     if os.path.exists(file_path):
         try:

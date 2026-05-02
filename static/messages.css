@@ -301,7 +301,7 @@ body.dark-theme .messtext a:hover {
   right: -10px;
   transform: translateX(-50%);
   /* Центрирует по горизонтали */
-  background-color: rgb(29, 124, 224, 0.7);
+  background-color: rgb(29, 124, 224, 0.5);
   color: white;
   padding: 3px 5px;
   border-radius: 12px;
@@ -315,7 +315,7 @@ body.dark-theme .messtext a:hover {
 }
 
 body.dark-theme .number-badge {
-  background-color: rgba(2, 47, 95, 0.7)
+  background-color: rgba(2, 47, 95, 0.5)
 }
 
 .likes {
@@ -337,7 +337,7 @@ body.dark-theme .number-badge {
   right: -10px;
   transform: translateX(-50%);
   /* Центрирует по горизонтали */
-  background-color: rgba(129, 129, 131, 0.8);
+  background-color: rgba(129, 129, 131, 0.5);
   color: white;
   padding: 3px 5px;
   border-radius: 12px;
@@ -369,6 +369,9 @@ body.dark-theme .number-badge {
   text-align: center;
   cursor: pointer;
 }
+.context_menu_clicker:hover { background: #007bff; }
+body.dark-theme .context_menu_clicker:hover { background: #0d2f53; }
+
 
 .context_right {
   left: calc(100% + 5px);

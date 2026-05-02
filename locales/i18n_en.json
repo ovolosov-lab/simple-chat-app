@@ -97,5 +97,6 @@
     "executor": "Executor",
     "the_same_file": "This file has already been sent",
     "welcome": "welcome_en.json",
-    "deadline_header": "Change task deadline"
+    "deadline_header": "Change task deadline",
+    "DocumDelete_question": "Delete an important document?"
 }

@@ -115,6 +115,12 @@
         <button id="confirm">{{task_dlg_confirm_btn}}</button>
     </dialog>
 
+    <dialog id="documDelDialog">
+        <p id="myDialog_question">{{DocumDelete_question}}</p>
+        <button id="documDelCancel">{{del_cancel}}</button>
+        <button id="documDelConfirm">{{del_confirm}}</button>
+    </dialog>
+
     <dialog id="personal_Dialog">
         <div id="pers_mess_header" class="lsh">{{pers_mess_header}}</div>
         <div><textarea id="pers_messtext" maxlength="1000" rows="5" cols="40"
@@ -227,6 +233,7 @@
         const textArea = document.getElementById('messtext_inp');
         const searchBtn = document.getElementById('searchBtn');
         const searchInput = document.getElementById('searchInput');
+        const documDelDialog = document.getElementById('documDelDialog');
 
 
         //  --------------------------------------------------------------
@@ -1048,6 +1055,8 @@
                     sl_pan.classList.add("panel-opened");
                     if (tasksDocsBtn.dataset.action == 'tasks') {
                         fetchTasks();
+                    } else {
+                       fetchDocuments(); 
                     }
                 } else if ((!clickedElement.closest('#sliding-panel')) && (!notesDlg.open) && (!deadlineDialog.open) && (!save_confirm_dialog.open)) {
                     if (sl_pan.classList.contains("panel-opened")) {     //  закрыть открытую ранее дополнительную панель (sliding panel)
@@ -1497,16 +1506,23 @@
             console.log("Add new document - Server response:", data);
         }
 
-        //  важный документ оказался неважным - удалить!  запрос на бэк-энд
+        //  важный документ оказался неважным - удалить!  +  запрос на бэк-энд
         async function remove_document(id) {
-            const response = await fetch("/documents/delete/" + id, { method: "DELETE", credentials: 'include' });
-            const data = await response.json();
-            if (data) {
-                if (data.result == "ok") {
-                    console.log("Документ удален");
-                    fetchDocuments();
+            document.getElementById('documDelCancel').addEventListener('click', (e) => { documDelDialog.close(); e.stopPropagation(); });
+            document.getElementById('documDelConfirm').addEventListener('click', async (e) => {
+                documDelDialog.close(); 
+                const response = await fetch("/documents/delete/" + id, { method: "DELETE", credentials: 'include' });
+                const data = await response.json();
+                if (data) {
+                    if (data.result == "ok") {
+                        console.log("Документ удален");
+                        fetchDocuments();
+                    }
                 }
-            }
+                e.stopPropagation();
+            });    
+            event.stopPropagation();
+            documDelDialog.showModal();
         }
 
         function show_notes_dialog(id, note) {

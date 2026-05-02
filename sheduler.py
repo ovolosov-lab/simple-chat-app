@@ -4,11 +4,11 @@ from loguru import logger
 
 
 class AsyncPeriodicTask:
-    def __init__(self, interval, task_func):
-        self.interval = interval
-        self.task_func = task_func
-        self._task = None
-        self._is_running = False  # флаг - запущена-ли задача
+    def __init__(self, interval: int, task_func: Callable):
+        self.interval: int = interval
+        self.task_func: Callable = task_func
+        self._task: asyncio.Task | None = None
+        self._is_running: bool = False  # флаг - запущена-ли задача
 
     async def _run(self):
         while self._is_running:

@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import Result, text
+from sqlalchemy import Result, TextClause, text
 import uvicorn
 from fastapi import Cookie, FastAPI, File, Form, Depends, HTTPException, Header, Request, UploadFile
 from database import db_connection_check, engine, SessionDep, check_user, create_all_tables, user_exists, new_session
@@ -20,11 +20,11 @@ from config import settings, logger, ERROR_MESSAGES_EN, ERROR_MESSAGES_RU
 from services import ProtectedStaticFiles, create_new_user, delete_file_from_disk, load_internationalization_data, background_checks, makeFileResponse, no_have_such_message, get_personal_messages, personal, save_user_file_to_disk, how_much_messages
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_DIR: str = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+templates: Jinja2Templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 
 # Lifespan function to perform startup and shutdown tasks, such as checking the database connection, 
@@ -61,21 +61,21 @@ app.add_middleware(
 
 # Health check endpoint to verify that the application is running and can connect to the database
 @app.get("/health")
-async def health_check():
+async def health_check() -> JSONResponse:
     """Health check endpoint to verify that the application is running and can connect to the database."""
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
-        return {"status": "ok"}
+        return JSONResponse(content={"status": "ok"})   
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         raise HTTPException(status_code=503, detail="Service Unavailable")
 
 
 # Get the authorization page with the form for entering username and password, and also with the flash message if there is an error during the previous authorization attempt 
-@app.get("/", tags=["Communicator", "auth"], summary="Communicator auth page")
+@app.get("/", tags=["Communicator", "auth"], summary="Communicator auth page") 
 async def auth_page(request: Request, flash_msg: str | None = Cookie(None), i18n_data: dict = Depends(lambda: load_internationalization_data(BASE_DIR, settings.language))):
-    data = {"flash_msg": flash_msg} if flash_msg else {}
+    data: dict = {"flash_msg": flash_msg} if flash_msg else {}
     response = templates.TemplateResponse("index.html", {"request": request, **i18n_data, **data})
     if flash_msg:
         response.delete_cookie(key="flash_msg")
@@ -101,7 +101,7 @@ async def messages_page(session: SessionDep, request: Request, current_user: Use
 async def messages(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     result: Result[Any]
     if id <= 0:
-        sql = text("""
+        sql: TextClause = text("""
            SELECT t.id, t.username, t.messtext, t.created_at, t.checked, t.likes, t.task 
            FROM (
              SELECT m.id, u.username, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
@@ -113,7 +113,7 @@ async def messages(id: int, session: SessionDep, current_user: UserInfo = Depend
         """) 
         result = await session.execute(sql, {"max_mess_count": settings.current_messages_max_count}) 
     else: 
-        sql = text(""" 
+        sql: TextClause = text(""" 
             SELECT m.id, u.username, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
             (SELECT count(*) FROM mess_read R WHERE R.mess_id=m.id) as checked, 
             (SELECT count(*) FROM mess_likes R WHERE R.mess_id=m.id) as likes, 0 as task                                  
@@ -127,11 +127,11 @@ async def messages(id: int, session: SessionDep, current_user: UserInfo = Depend
 
 # Add a new message to the messages list
 @app.post("/messages/add",  tags=["Communicator", "new message"], summary="Add a new message")
-async def add_message(new_message: Message, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-        clean_text = bleach.clean(new_message.messtext, tags=['b', 'i'], strip=True)
+async def add_message(new_message: Message, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
+        clean_text: str = bleach.clean(new_message.messtext, tags=['b', 'i'], strip=True)
         try:
-            new_message = MessageOrm(userid=new_message.userid, messtext=clean_text, checked=0)
-            session.add(new_message)
+            messageOrm: MessageOrm = MessageOrm(userid=new_message.userid, messtext=clean_text, checked=0)
+            session.add(messageOrm)
             await session.commit()
             logger.success(f"User message {new_message.userid} successfully added")
             return {"result": "ok"}
@@ -144,7 +144,7 @@ async def add_message(new_message: Message, session: SessionDep, current_user: U
 # Create a new user with the registration form data, checking the password confirmation and the uniqueness of the username, 
 # setting error message in cookie and redirecting to the auth page if something is wrong, otherwise - creating a new user, his token and redirecting to the messages page
 @app.post("/users/add",  tags=["Communicator", "new user"], summary="Add a new user")
-async def add_user(new_user: Annotated[NewUser, Form()], session: SessionDep):
+async def add_user(new_user: Annotated[NewUser, Form()], session: SessionDep) -> RedirectResponse:
     if (new_user.password1 == new_user.password2):
         if (await user_exists(new_user.username, session)):
             response = RedirectResponse(url="/", status_code=303)
@@ -165,10 +165,10 @@ async def add_user(new_user: Annotated[NewUser, Form()], session: SessionDep):
 
 # User authorization and token generation, setting http-only cookie with the token and redirecting to the messages page if authorization is successful, otherwise - redirecting to the auth page with error message in cookie
 @app.post("/users/auth",  tags=["Communicator", "user authorization"], summary="๊")
-async def user_auth(user: Annotated[User, Form()], session: SessionDep):
-    userid = await check_user(user.username, user.password, session) 
+async def user_auth(user: Annotated[User, Form()], session: SessionDep) -> RedirectResponse:
+    userid: int = await check_user(user.username, user.password, session) 
     if (userid > 0):
-        token = create_access_token(data={"username": user.username, "userid": str(userid)})
+        token: str = create_access_token(data={"username": user.username, "userid": str(userid)})
         # set http-only token in cookie and redirect to messages page
         response = RedirectResponse(url="/messages", status_code=303)
         response.set_cookie(key="access_token", value=token, httponly=True)
@@ -182,14 +182,14 @@ async def user_auth(user: Annotated[User, Form()], session: SessionDep):
 #   отмечаем сообщение прочитанным
 @app.post("/messages/check_read", tags=["Communicator", "messages", "check_read"], summary="mark the message have been read")
 async def message_check_read(mess_read: MessId, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql = text("""
+    sql: TextClause = text("""
             INSERT INTO mess_read(mess_id, userid) 
             SELECT A.id, :user_id FROM messages A WHERE A.id=:id AND 
             NOT EXISTS(SELECT B.userid FROM mess_read B WHERE B.mess_id=:mess_id AND B.userid=:userid) 
             """) 
     result = await session.execute(sql, {"user_id": current_user.userid, "id": mess_read.id, "mess_id": mess_read.id, "userid": current_user.userid}) 
     await session.commit()
-    sql = text("SELECT R.mess_id, count(*) as cnt FROM mess_read R WHERE R.mess_id=:id GROUP BY R.mess_id")
+    sql: TextClause = text("SELECT R.mess_id, count(*) as cnt FROM mess_read R WHERE R.mess_id=:id GROUP BY R.mess_id")
     result = await session.execute(sql, {"id": mess_read.id})
     dres = result.mappings().all()
     return dres
@@ -198,34 +198,33 @@ async def message_check_read(mess_read: MessId, session: SessionDep, current_use
 # ставим сообщению лайк
 @app.post("/messages/like", tags=["Communicator", "likes"], summary="get likes for the message")
 async def message_like(like: MessId, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    if (like.username != current_user.username) and (like.id > 0):
-        sql = text("""
+    if (like.username != current_user.username):  # нельзя лайкать свои сообщения
+        sql: TextClause = text("""
                 INSERT INTO mess_likes(mess_id, userid) 
                 SELECT A.id, :user_id FROM messages A WHERE A.id=:id AND 
                 NOT EXISTS(SELECT B.userid FROM mess_likes B WHERE B.mess_id=:mess_id AND B.userid=:userid) 
                """) 
         result = await session.execute(sql, {"user_id": current_user.userid, "id": like.id, "mess_id": like.id, "userid": current_user.userid}) 
         await session.commit()
-        sql = text("SELECT R.mess_id, count(*) as cnt FROM mess_likes R WHERE R.mess_id=:id GROUP BY R.mess_id")
-        result = await session.execute(sql, {"id": like.id})
-        dres = result.mappings().all()
-        return dres
-    else:
-        return {"result": "User is not authorized"}
+
+    sql: TextClause = text("SELECT R.mess_id, count(*) as cnt FROM mess_likes R WHERE R.mess_id=:id GROUP BY R.mess_id")
+    result = await session.execute(sql, {"id": like.id})
+    dres = result.mappings().all()
+    return dres
 
 
 # Get the list of all users with their activity status (active/inactive) and fio for the personal messages page
 @app.get("/users/get_activity", tags=["Communicator", "users", "activity"], summary="Get list of the activ users")
 async def get_users_activity(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql = text("SELECT u.userid, u.username, u.active, u.fio FROM users u ORDER BY u.username") 
+    sql: TextClause = text("SELECT u.userid, u.username, u.active, u.fio FROM users u ORDER BY u.username") 
     result = await session.execute(sql) 
     return result.mappings().all()
 
 
 # Get the first message id in the database to set the starting point for loading messages on the client side
 @app.get("/messages/first_id", tags=["Communicator", "messages", "first id"], summary="the first message id")
-async def first_id(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql = text("SELECT MIN(m.id) as id FROM messages m") 
+async def first_id(session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
+    sql: TextClause = text("SELECT MIN(m.id) as id FROM messages m") 
     result = await session.execute(sql) 
     row = result.first()
     if row:
@@ -236,8 +235,8 @@ async def first_id(session: SessionDep, current_user: UserInfo = Depends(get_cur
 
 # Upload the attachment file and add the message with the file link to the messages list
 @app.post("/upload-attachment/", tags=["Communicator", "files", "upload"], summary="attachment files uploading")
-async def upload_file(session: SessionDep, file: UploadFile = File(...), current_user: UserInfo = Depends(get_current_user)):
-    result = await save_user_file_to_disk(current_user.username, UPLOAD_DIR, file)
+async def upload_file(session: SessionDep, file: UploadFile = File(...), current_user: UserInfo = Depends(get_current_user)) -> dict:
+    result: dict = await save_user_file_to_disk(current_user.username, UPLOAD_DIR, file)
     
     #  Writing file info to the database and linking it to the message   
     if result['error'] == 'OK':
@@ -252,11 +251,11 @@ async def upload_file(session: SessionDep, file: UploadFile = File(...), current
                 shortFileName = shortFileName[:22] + '... ' + extension
             shortFileName = "&#128206; " + shortFileName + " &#128206;"    
             # mess_text = f"&#128206; <a href='/download-attachment/{unique_filename}'>{origFileName}</a> &#128206;"    
-        new_message = MessageOrm(userid=current_user.userid, messtext=shortFileName, checked=0)
-        session.add(new_message)    
+        new_messageOrm: MessageOrm = MessageOrm(userid=current_user.userid, messtext=shortFileName, checked=0)
+        session.add(new_messageOrm)    
         await session.flush() 
-        sql = text("INSERT INTO attachments(mess_id, filename, origname) VALUES(:mess_id, :filename, :origname)") 
-        result = await session.execute(sql, {"mess_id": new_message.id, "filename": result["unique_filename"], "origname": result["orig_filename"]}) 
+        sql: TextClause = text("INSERT INTO attachments(mess_id, filename, origname) VALUES(:mess_id, :filename, :origname)") 
+        await session.execute(sql, {"mess_id": new_messageOrm.id, "filename": result["unique_filename"], "origname": result["orig_filename"]}) 
         await session.commit()  
         logger.success(f"File {file.filename} successfully uploaded")
         return {"filename": file.filename, "status": "saved"}
@@ -271,7 +270,7 @@ async def download_file(session: SessionDep, id: int, current_user: UserInfo = D
     result = await session.execute(sql, {"id": id})
     row = result.first() 
     if row:
-        file_path = os.path.join(UPLOAD_DIR, row.filename)   
+        file_path: str = os.path.join(UPLOAD_DIR, row.filename)   
         if not os.path.exists(file_path):
             return {"error": ERROR_MESSAGES_EN.get("file_not_found","File not found") if settings.language == "en" else ERROR_MESSAGES_RU.get("file_not_found","Файл не найден")}
         return FileResponse(
@@ -281,11 +280,12 @@ async def download_file(session: SessionDep, id: int, current_user: UserInfo = D
         )
     else:
         return {"error": ERROR_MESSAGES_EN.get("file_not_found","File not found") if settings.language == "en" else ERROR_MESSAGES_RU.get("file_not_found","Файл не найден")}
+    
 
 # Get the previous messages based on the message id (for infinite scroll implementation on the client side)
 @app.get("/messages/get_prev/{id}", tags=["Communicator", "messages history"], summary="Get all the previous messages")
 async def prev_messages(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql = text("""
+    sql: TextClause = text("""
         SELECT m.id, u.username, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
         (SELECT count(*) FROM mess_read R WHERE R.mess_id=m.id) as checked  
         FROM messages m INNER JOIN users u ON m.userid=u.userid 
@@ -299,7 +299,7 @@ async def prev_messages(id: int, session: SessionDep, current_user: UserInfo = D
 # Get the number of reads and likes for the messages and also the information if the message is unread for the current user to warn that user (unread - if the message was created in the last 24 hours, user is not the author of the message and user did not read this message)
 @app.get("/messages/conditions", tags=["Communicator", "mess. conditions"], summary="Get all the reads and likes")
 async def conditions(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql = text("""
+    sql: TextClause = text("""
         SELECT m.id, (SELECT count(*) FROM mess_read R WHERE R.mess_id=m.id) as reads, (SELECT count(*) FROM mess_likes L WHERE L.mess_id=m.id) as likes, 
         CASE 
         WHEN NOT EXISTS(SELECT 1 FROM mess_read Z WHERE Z.mess_id=m.id AND Z.userid=:userid) AND (m.userid <> :userid2) AND (m.created_at >= CURRENT_DATE - INTERVAL '1 day') THEN 1 
@@ -313,7 +313,7 @@ async def conditions(session: SessionDep, current_user: UserInfo = Depends(get_c
 # Get the list of all users to fill the select element with the users in the new task form
 @app.get("/users/get_users", tags=["Communicator", "users"], summary="Get list of the users")
 async def get_userslist(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql = text("SELECT u.userid, u.username FROM users u ORDER BY u.username") 
+    sql: TextClause = text("SELECT u.userid, u.username FROM users u ORDER BY u.username") 
     result = await session.execute(sql) 
     return result.mappings().all()  
 
@@ -321,7 +321,7 @@ async def get_userslist(session: SessionDep, current_user: UserInfo = Depends(ge
 # Get all active tasks with all their comments and info about expired tasks
 @app.get("/tasks/get_tasks", tags=["Communicator", "tasks"], summary="Get all active tasks")
 async def get_tasks(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql = text("""
+    sql: TextClause = text("""
         SELECT t.id, u1.username as creator, t.title, t.description, to_char(t.created_at, 'DD.MM.YYYY') as created_at, u2.username as respons, 
         to_char(t.deadline, 'DD.MM.YYYY') as deadline, CASE WHEN t.deadline < LOCALTIMESTAMP THEN 1 else 0 END as expired, (
             SELECT COALESCE(json_agg(json_build_object('c_id', c.id, 'username', u.username, 'comment', c.comment, 'created_at', to_char(c.created_at, 'DD.MM.YYYY HH24:MI')) ORDER BY c.id ASC), '[]'::json) 
@@ -341,7 +341,7 @@ async def get_tasks(session: SessionDep, current_user: UserInfo = Depends(get_cu
 # Get data for Gantt diagram
 @app.get("/tasks/gant", tags=["Communicator", "tasks"], summary="Get all active tasks")
 async def get_diagram_data(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql = text("""SELECT t.id, DATE(t.created_at) - CURRENT_DATE as startcol, DATE(t.deadline) - CURRENT_DATE as endcol, t.title, to_char(t.deadline, 'DD.MM.YYYY') as deadline, 
+    sql: TextClause = text("""SELECT t.id, DATE(t.created_at) - CURRENT_DATE as startcol, DATE(t.deadline) - CURRENT_DATE as endcol, t.title, to_char(t.deadline, 'DD.MM.YYYY') as deadline, 
                     t.respons, CASE WHEN u.fio='' THEN u.username ELSE u.fio END as executor, CASE WHEN CURRENT_DATE > t.deadline THEN 1 ELSE 0 END as expired
                     FROM tasks t INNER JOIN users u ON t.respons=u.userid 
                     ORDER BY t.created_at""") 
@@ -351,13 +351,13 @@ async def get_diagram_data(session: SessionDep, current_user: UserInfo = Depends
 
 # Add a new task based on the message text 
 @app.post("/tasks/add",  tags=["Communicator", "new task"], summary="Add a new task")
-async def add_task(new_task: Tasks, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
+async def add_task(new_task: Tasks, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
     logger.info("Adding new task with id: " + str(new_task.id))
-    sql = text("SELECT m.messtext FROM messages m WHERE m.id=:id") 
+    sql: TextClause = text("SELECT m.messtext FROM messages m WHERE m.id=:id") 
     result = await session.execute(sql, {"id": new_task.id}) 
     row = result.first()
     if row:   
-        newTaskOrm = TasksOrm(creator=new_task.creator, respons=new_task.respons, deadline=new_task.deadline, title=new_task.title, description=row.messtext)
+        newTaskOrm: TasksOrm = TasksOrm(creator=new_task.creator, respons=new_task.respons, deadline=new_task.deadline, title=new_task.title, description=row.messtext)
         try:
             session.add(newTaskOrm)
             await session.commit()
@@ -377,8 +377,10 @@ async def add_task(new_task: Tasks, session: SessionDep, current_user: UserInfo 
 
 # Close the task (only for the task creator)
 @app.delete("/tasks/close/{id}", tags=["Communicator", "tasks", "close"], summary="close the task")
-async def close_task(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql = text("DELETE FROM tasks WHERE id=:id") 
+async def close_task(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
+    sql: TextClause = text("DELETE FROM comments WHERE task_id=:id") 
+    result = await session.execute(sql, {"id": id}) 
+    sql: TextClause = text("DELETE FROM tasks WHERE id=:id") 
     result = await session.execute(sql, {"id": id}) 
     await session.commit()
     return {"result": "ok"}
@@ -386,10 +388,10 @@ async def close_task(id: int, session: SessionDep, current_user: UserInfo = Depe
 
 # Edit the task description (only for the task creator)
 @app.post("/tasks/edit", tags=["Communicator", "tasks", "close"], summary="close the task")
-async def edit_task(task: TaskEdit, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    new_text = bleach.clean(task.messtext)
+async def edit_task(task: TaskEdit, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
+    new_text: str = bleach.clean(task.messtext)
     if (current_user.userid == task.userid) and (len(new_text) > 10):
-        sql = text("UPDATE tasks SET description=:messtext WHERE id=:id") 
+        sql: TextClause = text("UPDATE tasks SET description=:messtext WHERE id=:id") 
         result = await session.execute(sql, {"messtext": new_text, "id": task.id}) 
         await session.commit()
         return {"result": "ok"}
@@ -399,9 +401,9 @@ async def edit_task(task: TaskEdit, session: SessionDep, current_user: UserInfo 
 
 # Edit the task deadline (only for the task creator)
 @app.post("/tasks/deadline/edit", tags=["Communicator", "tasks", "close"], summary="close the task")
-async def edit_deadline(deadline: DeadlineEdit, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
+async def edit_deadline(deadline: DeadlineEdit, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
     if (current_user.userid == deadline.userid):
-        sql = text("UPDATE tasks SET deadline=:deadline WHERE id=:id") 
+        sql: TextClause = text("UPDATE tasks SET deadline=:deadline WHERE id=:id") 
         result = await session.execute(sql, {"deadline": deadline.deadline, "id": deadline.id}) 
         await session.commit()
         return {"result": "ok"}
@@ -411,10 +413,10 @@ async def edit_deadline(deadline: DeadlineEdit, session: SessionDep, current_use
 
 # Add a new personal message to the personal messages list for the current user
 @app.post("/messages/send_personal",  tags=["Communicator", "personal"], summary="send personal message")
-async def add_personal_message(message: Message, current_user: UserInfo = Depends(get_current_user)):
-    messText = bleach.clean(message.messtext, tags=['b', 'i'], strip=True)
+async def add_personal_message(message: Message, current_user: UserInfo = Depends(get_current_user)) -> dict:
+    messText: str = bleach.clean(message.messtext, tags=['b', 'i'], strip=True)
     if no_have_such_message(message.userid, current_user.username, messText):
-        one_personal_message = {"to": message.userid, "from": current_user.username, "messtext": messText, "created_at": datetime.now()}
+        one_personal_message: dict = {"to": message.userid, "from": current_user.username, "messtext": messText, "created_at": datetime.now()}
         personal.append(one_personal_message)
         logger.info("Created new personal message from " + current_user.username)
         return {"result": "ok"}
@@ -430,39 +432,50 @@ async def get_personal_message(current_user: UserInfo = Depends(get_current_user
 
 # Delete a message and its associated files
 @app.delete("/messages/delete/{id}", tags=["Communicator", "message", "delete"], summary="delete message")
-async def del_message(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql = text("SELECT a.filename FROM attachments a WHERE a.mess_id=:mess_id AND NOT EXISTS(SELECT 1 FROM documents d WHERE d.mess_id=a.mess_id) LIMIT 1")
+async def del_message(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
+    sql: TextClause = text("SELECT a.id FROM tasks a WHERE a.id=:mess_id LIMIT 1")
     result = await session.execute(sql, {"mess_id": id})
     row = result.first()   
-    # if the file from attachments is not listed in the important documents - delete it from disk
+    # if the message is listed in the active tasks - we must not delete it from the messages
     if row:  
-        delete_file_from_disk(row.filename, UPLOAD_DIR)
-        # теперь удалим записи в базе данных  -  все дочерние записи должне быть удалены каскадно 
-        # благодаря настройкам внешнего ключа, удалим только приаттаченные файлы к сообщению, которые не числятся в важных документах      
-        sql = text("DELETE FROM attachments WHERE mess_id=:id") 
-        result = await session.execute(sql, {"id": id})         
-    sql = text("DELETE FROM tasks WHERE id=:id") 
-    result = await session.execute(sql, {"id": id})         
-    sql = text("DELETE FROM mess_likes WHERE mess_id=:id") 
-    result = await session.execute(sql, {"id": id})         
-    sql = text("DELETE FROM mess_read WHERE mess_id=:id") 
-    result = await session.execute(sql, {"id": id})         
-    sql = text("DELETE FROM messages WHERE id=:id") 
-    result = await session.execute(sql, {"id": id}) 
-    await session.commit()
-    return {"result": "ok"}
+        return {"result": "error", "details": "This message is listed in active tasks"} 
+    else:   
+        sql: TextClause = text("SELECT a.filename FROM documents a WHERE a.mess_id=:mess_id LIMIT 1")
+        result = await session.execute(sql, {"mess_id": id})
+        row = result.first()   
+        # if the file is listed in the important documents - we must not delete it from the messaages and from the disk!
+        if row:  
+            return {"result": "error", "details": "This message is listed in important documents"}
+        else:    
+            sql: TextClause = text("SELECT a.filename FROM attachments a WHERE a.mess_id=:mess_id LIMIT 1")
+            result = await session.execute(sql, {"mess_id": id})
+            row = result.first()   
+            # if the file from attachments is not listed in the important documents - delete it from disk
+            if row:  
+                delete_file_from_disk(row.filename, UPLOAD_DIR)
+                # теперь удалим записи в базе данных   
+                sql: TextClause = text("DELETE FROM attachments WHERE mess_id=:id") 
+                result = await session.execute(sql, {"id": id})         
+
+            sql = text("DELETE FROM mess_likes WHERE mess_id=:id") 
+            result = await session.execute(sql, {"id": id})         
+            sql = text("DELETE FROM mess_read WHERE mess_id=:id") 
+            result = await session.execute(sql, {"id": id})         
+            sql = text("DELETE FROM messages WHERE id=:id") 
+            result = await session.execute(sql, {"id": id}) 
+            await session.commit()
+            return {"result": "ok"}
 
 
 # Delete a document from the important documents list
 @app.delete("/documents/delete/{id}", tags=["Communicator", "documents", "delete"], summary="delete document")
-async def del_document(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql = text("SELECT a.savedname as filename FROM documents a WHERE a.mess_id=:mess_id AND NOT EXISTS(SELECT 1 FROM attachments b WHERE b.mess_id=a.mess_id) LIMIT 1")
+async def del_document(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
+    sql: TextClause = text("SELECT a.savedname as filename FROM documents a WHERE a.mess_id=:mess_id AND NOT EXISTS(SELECT 1 FROM attachments b WHERE b.mess_id=a.mess_id) LIMIT 1")
     result = await session.execute(sql, {"mess_id": id})
     row = result.first()   
     # if the file from documents is not listed in the attachments - delete it from disk, because it is not used in messages anymore and is not listed in important documents
     if row:  
-        filename = str(row.filename) 
-        file_path = os.path.join(UPLOAD_DIR, filename)   
+        file_path: str = os.path.join(UPLOAD_DIR, row.filename)   
         if os.path.exists(file_path):
             try:
                 os.remove(file_path)
@@ -486,8 +499,8 @@ async def get_ducuments(session: SessionDep, currnet_user: UserInfo = Depends(ge
 
 # Add a new document to the important documents list
 @app.post("/documents/add",  tags=["Communicator", "documents", "add"], summary="Add a new document")
-async def add_document(new_doc: Docs, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql = text("SELECT A.filename, A.origname FROM attachments A WHERE A.mess_id=:mess_id LIMIT 1")
+async def add_document(new_doc: Docs, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
+    sql: TextClause = text("SELECT A.filename, A.origname FROM attachments A WHERE A.mess_id=:mess_id LIMIT 1")
     result = await session.execute(sql, {"mess_id": new_doc.mess_id})
     row = result.first()   
     if row:  
@@ -505,23 +518,26 @@ async def add_document(new_doc: Docs, session: SessionDep, current_user: UserInf
             await session.rollback()
             logger.error(f"Error occurred while trying to add document: {e}")    
             return {"result": "error"}
+    else:
+        return {"result": "Source file was not found in attachments"}    
 
 
 # Download the file from important document lists\s item  
 @app.get("/documents/download/{id}", tags=["Communicator", "files", "download"], summary="download the attachment file")
 async def get_document_file(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql = text("SELECT A.filename, A.savedname FROM documents A WHERE A.mess_id=:mess_id LIMIT 1")
+    sql: TextClause = text("SELECT A.filename, A.savedname FROM documents A WHERE A.mess_id=:mess_id LIMIT 1")
     result = await session.execute(sql, {"mess_id": id})
     row = result.first() 
     if row:
         return makeFileResponse(row.savedname, row.filename, UPLOAD_DIR)
-  
+    else:
+        return {"result": "Document not found"}
 
 
 # add the document\s description\notes, which will be visible in the important documents list
 @app.post("/documents/add_notes", tags=["Communicator", "documents", "add_notes"], summary="add notes to the document")
-async def add_doc_description(descr: DocsNotes, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql = text("""UPDATE documents SET notes=:notes WHERE mess_id=:mess_id""")
+async def add_doc_description(descr: DocsNotes, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
+    sql: TextClause = text("""UPDATE documents SET notes=:notes WHERE mess_id=:mess_id""")
     try:
         await session.execute(sql, {"notes": descr.notes, "mess_id": descr.mess_id}) 
         await session.commit()
@@ -534,8 +550,8 @@ async def add_doc_description(descr: DocsNotes, session: SessionDep, current_use
 
 # add / update user's full name
 @app.post("/users/fio", tags=["Communicator", "users", "fio"], summary="add first / last names")
-async def add_fio(user_fio: UserFio, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql = text("""UPDATE users SET fio=:fio WHERE userid=:userid""")
+async def add_fio(user_fio: UserFio, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
+    sql: TextClause = text("""UPDATE users SET fio=:fio WHERE userid=:userid""")
     try:
         await session.execute(sql, {"fio": user_fio.fio, "userid": user_fio.userid}) 
         await session.commit()
@@ -548,8 +564,8 @@ async def add_fio(user_fio: UserFio, session: SessionDep, current_user: UserInfo
 
 # add new comment to the task
 @app.post("/comments/add",  tags=["Communicator", "Comments", "new message"], summary="Add a new comment to the task")
-async def add_comment(new_comment: Comments, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    clean_text = bleach.clean(new_comment.comment, tags=['b', 'i'], strip=True)
+async def add_comment(new_comment: Comments, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
+    clean_text: str = bleach.clean(new_comment.comment, tags=['b', 'i'], strip=True)
     try:
         new_comment = CommentsOrm(task_id=new_comment.task_id, creator=new_comment.creator, comment=clean_text)
         session.add(new_comment)
@@ -559,7 +575,7 @@ async def add_comment(new_comment: Comments, session: SessionDep, current_user: 
     except Exception as e:
         await session.rollback()
         logger.error(f"Error occurred while trying to add comment: {e}")
-        return {"result": "error"}
+        return {"result": "error", "details": str(e)}
 
 
 @app.exception_handler(HTTPException)
@@ -572,7 +588,7 @@ async def custom_http_exception_handler(conn: ConnectionAbortedError, exc: HTTPE
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse | RedirectResponse:
     readable_errors = []
     
     for error in exc.errors():
