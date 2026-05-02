@@ -27,6 +27,9 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 
+# Lifespan function to perform startup and shutdown tasks, such as checking the database connection, 
+# creating tables, starting background tasks for checking users activity and 
+# closing the database connection pool at shutdown
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await db_connection_check()
