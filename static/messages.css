@@ -1638,15 +1638,15 @@ dialog::backdrop {
   }
 
   #diagramDlg {
-    width: 96dvh;
-    height: 88dvw;
-    max-height: 88dvw !important;
+    width: 95dvh;
+    height: 84dvw;
+    max-height: 84dvw !important;
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) rotate(90deg);
+    transform: translate(-47.8%, -50%) rotate(90deg);
     margin: 0;
-    max-width: 96dvh;
+    max-width: 95dvh;
     border: none;
     box-sizing: border-box;
   }
@@ -1660,7 +1660,7 @@ dialog::backdrop {
   }
 
   #diagramDlg .gant-parent {
-    max-width: 100%;
+    max-width: 96%;
     min-width: 0;
     min-height: 0;
     max-height: calc(100% - 90px);
