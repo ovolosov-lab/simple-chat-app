@@ -791,6 +791,7 @@ body.dark-theme .sun {
 }
 
 .one_user {
+  font-family: Arial, Helvetica, sans-serif;
   position: relative;
   z-index: 1;
   /* Текст поверх облака */
@@ -798,8 +799,6 @@ body.dark-theme .sun {
   /* Темный текст */
   font-weight: normal;
   padding: 10px;
-  padding-left: 20px;
-  padding-right: 20px;
   margin: 0;
   font-size: 1.0rem;
   cursor: pointer;
@@ -977,7 +976,6 @@ body.dark-theme .sun {
   display: flexbox;
   padding: 10px;
   flex-direction: column;
-  padding-top: 0;
 }
 
 .fileUploadDiv {
@@ -1627,14 +1625,14 @@ dialog::backdrop {
 
 .toast {
   position: fixed;
-  bottom: 140px;
+  bottom: 240px;
   left: calc(50% - width / 2);
-  background-color: #fdfcfc;
+  background-color: #ffffff;
   color: rgb(70, 33, 33);
   padding: 16px 20px;
   border: #60f3fd solid 1px;
   border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
   display: flex;
   align-items: center;
   gap: 15px;
@@ -1649,6 +1647,12 @@ dialog::backdrop {
 .toast.show {
   opacity: 1;
   transform: translateY(0);
+}
+
+.toast .close-btn {
+  font-weight: bold;
+  color: red;
+  cursor: pointer;
 }
 
 @media (max-width: 768px) {

@@ -73,6 +73,10 @@ async def check_user(username: str, password: str, session: SessionDep) -> int:
 async def create_all_tables():
     """ DB: Create all tables if they do not exist yet. This function should be called at the start of the application. """
     async with engine.begin() as conn:
+        if settings.in_development and settings.force_recreate_db:
+            await conn.run_sync(Base.metadata.drop_all)
+            logger.success("All previous database tables have been dropped.")
+        
         await conn.run_sync(Base.metadata.create_all)
         logger.success("Database tables were created successfully")        
         

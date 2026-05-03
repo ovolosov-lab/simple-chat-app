@@ -362,7 +362,8 @@ async def add_task(new_task: Tasks, session: SessionDep, current_user: UserInfo 
         result = await session.execute(sql, {"title": new_task.title}) 
         row = result.first()
         if row:
-            return {"result": "error", "details": "Task with the same title already exists" if settings.language == "en" else "Задача с таким названием уже существует"}   
+            return {"result": "error", "details": "Task with the same title already exists" if settings.language == "en" else "Задача с таким названием уже существует"}  
+         
         newTaskOrm: TasksOrm = TasksOrm(creator=new_task.creator, respons=new_task.respons, deadline=new_task.deadline, title=new_task.title, description=task_description)
         try:
             session.add(newTaskOrm)

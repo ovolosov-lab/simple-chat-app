@@ -119,7 +119,8 @@ class Settings(BaseSettings):
     largest_number_of_messages: int = 10000
     largest_number_of_users: int = 10000
     language: str = "en" 
-   
+    in_development: bool = False
+    force_recreate_db: bool = False   
 
 
     # Указываем, откуда брать данные
