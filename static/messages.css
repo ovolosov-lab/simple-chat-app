@@ -1658,8 +1658,8 @@ dialog::backdrop {
 
   #diagramDlg {
     width: 95dvh;
-    height: 84dvw;
-    max-height: 84dvw !important;
+    height: 83dvw;
+    max-height: 83dvw !important;
     position: fixed;
     top: 50%;
     left: 50%;
@@ -1683,7 +1683,6 @@ dialog::backdrop {
     min-width: 0;
     min-height: 0;
     max-height: calc(100% - 90px);
-    /* Leave room for button */
     flex: 1;
     margin-bottom: 4px;
   }
