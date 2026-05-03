@@ -91,7 +91,7 @@
 
     </div>
 
-    <div id="makeTaskDiv" class="makeTaskDiv">
+    <dialog id="makeTaskDiv" class="makeTaskDiv">
         <h3 id="new_task_h3">{{new_task_h3}}</h3>
         <form name="task_form" id="task_form">
             <label for="task_title_inp" class="taskLabel">{{task_title_label}}</label>
@@ -107,7 +107,7 @@
             <button type="button" onclick="closeTaskDiv()" id="closeTaskWindow"
                 class="taskButton">{{closeTaskWindow}}</button>
         </form>
-    </div>
+    </dialog>
 
     <dialog id="myDialog">
         <p id="myDialog_question">{{myDialog_question}}</p>
@@ -194,6 +194,11 @@
         <div data-action="delete" class="menu-item">{{menu_item_delete}}</div>
     </div>
 
+    <div id="toast" class="toast hidden">
+        <span id="toast_message" class="message"></span>
+        <span class="close-btn" onclick="hideToast()">×</span>
+    </div>
+
     <script>
         let min_id = 0;
         let firstId = 0;
@@ -202,6 +207,8 @@
         let task_id = 0;
         let to_userid = 0;
         let from_name = '';
+        let toastTimeout;
+
 
         const dialog = document.getElementById('myDialog');
         const save_confirm_dialog = document.getElementById('task_save_confirm_Dialog');
@@ -795,6 +802,7 @@
                 if ((messtext != "") && (dDate > today)) {
                     console.log("Создание задания: ", task_id);
                     console.log("Creator:", userid);
+                    tasksDiv.close();
 
                     // отправляем запрос
                     const response = await fetch("/tasks/add", {
@@ -812,13 +820,18 @@
                     const data = await response.json();
                     console.log("New task - Server response:", data);
 
-                    tasksDiv.classList.remove("taskDiv_opened");
                     if (created) {
                         created.classList.remove("click_me");
                     }
+                    if (data) {
+                        if (data.result == "error") {
+                            showToast(data.details);
+                        }
+                    }
                 } else {
-                    console.log("введен неверный срок завершения задачи " + due_date);
-                    console.log("Задача НЕ создана!");
+                    showToast("Incorrect deadline was entered");
+                    console.log("Incorrect task deadline was entered " + due_date);
+                    console.log("The task was NOT created.!");
                 }
             }
         };
@@ -1062,9 +1075,9 @@
                     if (sl_pan.classList.contains("panel-opened")) {     //  закрыть открытую ранее дополнительную панель (sliding panel)
                         searchInput.classList.remove('si_active');
                         sl_pan.classList.remove('panel-opened');
-                    } else if (tasksDiv.classList.contains("taskDiv_opened")) {   // обработка события Закрыть блок добавления новой задачи
-                        tasksDiv.classList.remove("taskDiv_opened");
-                    }
+                    } //else if (tasksDiv.classList.contains("taskDiv_opened")) {   // обработка события Закрыть блок добавления новой задачи
+                      //    tasksDiv.classList.remove("taskDiv_opened");
+                      // }
                 }
             } else if ((!clickedElement.closest('#chat-header')) && (clickedElement.tagName != "A") && (!notesDlg.open) && (!deadlineDialog.open) && (!save_confirm_dialog.open)) {
                 if (sl_pan.classList.contains('panel-opened')) {
@@ -1075,7 +1088,8 @@
                         scroll_switch.checked = false;
                         document.getElementById("task_id").value = clickedElement.id.replace("created_", "");
                         console.log(document.getElementById("task_id").value);
-                        tasksDiv.classList.add("taskDiv_opened");
+                        tasksDiv.showModal();
+                        // tasksDiv.classList.add("taskDiv_opened");
                     }
                 }
             }
@@ -1091,7 +1105,7 @@
 
         // Отмена создания задачи - просто закрыть диалог
         function closeTaskDiv() {
-            tasksDiv.classList.remove("taskDiv_opened");
+            tasksDiv.close();
         }
 
         // Закрыть при подтверждении - Закрыть задачу и закрыть диалог
@@ -1227,10 +1241,15 @@
                                 })
                             });
                             const data = await response.json();
+                            if (data) {
+                                if (data.result == "error") {
+                                    showToast(data.details);
+                                }
+                            }
                             console.log(`Task id=${save_confirm_dialog.dataset.task_id} text edited - Server response:`, data);
                         } catch (error) {
-                            console.error('Ошибка загрузки задач:', error);
-                            tasksDiv.classList.remove("taskDiv_opened");
+                            console.error('Tasks loading error:', error);
+                            // tasksDiv.classList.remove("taskDiv_opened");
                         }
                     }
                     save_confirm_dialog.dataset.task_id = 0;
@@ -1403,7 +1422,7 @@
                 case 'read':
                     if ((mess_block.dataset) && (mess_block.dataset.username != userName) && (mess_block.dataset.uniqJson != ""))
                         try {
-                            console.log("Отмечаем сообщение прочитанным:", mess_block.dataset.uniqJson);
+                            console.log("mark the message as read:", mess_block.dataset.uniqJson);
                             const response = await fetch('/messages/check_read', {
                                 method: "POST",
                                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -1418,7 +1437,7 @@
                                 elem.innerHTML = String(msg.cnt);
                             });
                         } catch (error) {
-                            console.error('Ошибка загрузки сообщений:', error);
+                            console.error('Server error:', error);
                         }
                     break;
                 case 'like':
@@ -1428,7 +1447,7 @@
                 case 'task':
                     scroll_switch.checked = false;
                     document.getElementById("task_id").value = id;
-                    tasksDiv.classList.add("taskDiv_opened");
+                    tasksDiv.showModal();
                     break;
                 case 'docs':
                     console.log('Выбрано: docs');
@@ -1443,17 +1462,21 @@
         });
 
         // при подтверждении "готов удалить сообщение" - удалить сообщение и закрыть диалог
-        del_confirm.addEventListener('click', async () => {
+        del_confirm.addEventListener('click', async (e) => {
             console.log('Выбрано: Удалить сообщение ' + deleteDlg.dataset.id);
+            deleteDlg.close();
             const response = await fetch('/messages/delete/' + deleteDlg.dataset.id, { credentials: 'include', method: 'DELETE' });
             const data = await response.json();
             if (data) {
                 if (data.result == "ok") {
                     lastId = 0;
                     fetchMessages();
+                } else {
+                    showToast(data.details);
                 }
+                console.log(data);
             }
-            deleteDlg.close();
+            e.stopPropagation();
         });
 
         // Закрыть при отмене - отказаться от удаления и закрыть диалог
@@ -1478,6 +1501,8 @@
                         elem.contentEditable = "false";
                     });
                 }
+
+                hideToast();
             }
 
             if (task_edit_block.length > 0) {  // находимся в режиме редактирования задачи
@@ -1699,7 +1724,6 @@
                 document.getElementById('deadline_cancel').addEventListener('click', (e) => { deadlineDialog.close(); e.stopPropagation(); });
                 document.getElementById('deadline_confirm').addEventListener('click', async (e) => {
                     let new_data = dEdit.value;
-                    document.getElementById('deadline_' + task_id).innerHTML = "{{task_deadline}}: <b style='color:#128256'>" + new_data + "</b>";
                     try {
                         const response = await fetch('/tasks/deadline/edit', {
                             method: "POST",
@@ -1712,10 +1736,17 @@
                             })
                         });
                         const data = await response.json();
-                        console.log(`Task id=${task_id} deadline edited - Server response:`, data);
+                        if (data) {
+                            if (data.result == "error") {
+                                showToast(data.details);
+                            } else {
+                                document.getElementById('deadline_' + task_id).innerHTML = "{{task_deadline}}: <b style='color:#128256'>" + new_data + "</b>";
+                            }  
+
+                            console.log(`Task id=${task_id} deadline edited - Server response:`, data);
+                        }
                     } catch (error) {
                         console.error('Task deadline editing error:', error);
-                        tasksDiv.classList.remove("taskDiv_opened");
                     }
                     e.stopPropagation();
                     deadlineDialog.close();
@@ -1723,6 +1754,25 @@
                 deadlineDialog.showModal();
             }
         }
+
+        function showToast(txt) {
+            const toast = document.getElementById("toast");
+            document.getElementById("toast_message").innerHTML = "⚠️ " + txt;
+            toast.classList.remove("hidden");
+            toast.classList.add("show");
+            // Убираем старый таймер, если он был
+            clearTimeout(toastTimeout);
+            // Скрываем автоматически через 3 секунды
+            toastTimeout = setTimeout(() => { hideToast(); }, 3000);
+        }
+
+        function hideToast() {
+            const toast = document.getElementById("toast");
+            if (toast.classList.contains("show")) {
+                toast.classList.remove("show");
+                setTimeout(() => toast.classList.add("hidden"), 500); 
+            }
+        }        
     </script>
 </body>
 

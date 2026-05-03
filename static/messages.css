@@ -967,17 +967,12 @@ body.dark-theme .sun {
 
 
 .makeTaskDiv {
-  top: 200px;
-  visibility: hidden;
-  height: 0px;
-  max-height: 0px;
-  left: calc(100% / 2 - 220px);
-  position: absolute;
+  min-height: 400px;
+  max-height: 600px;
+  padding: 10px;
+  background: #aaaaaa;
   width: 400px;
   background: rgb(231, 231, 231);
-  border-radius: 15px;
-  /* Скругление углов */
-  box-shadow: 6px 6px 12px #fff, -6px -6px 12px #b8bec5;
   border: 1px solid rgba(159, 114, 114 / 20%);
   display: flexbox;
   padding: 10px;
@@ -1039,7 +1034,7 @@ body.dark-theme .sun {
 
 .task_title_span {
   display: inline-block;
-  max-width: 320px;
+  max-width: 250px;
 }
 
 .respons,
@@ -1117,14 +1112,6 @@ H3 {
   padding-left: 5px;
 }
 
-.taskDiv_opened {
-  visibility: visible;
-  min-height: 400px;
-  max-height: 600px;
-  padding: 10px;
-  background: #aaaaaa;
-}
-
 
 @media (max-width: 768px) {
   .si_active {
@@ -1150,7 +1137,6 @@ H3 {
 
   .makeTaskDiv {
     width: 80%;
-    left: calc(100% / 2 - 160px);
     min-height: 400px;
     margin-left: 4px;
   }
@@ -1501,12 +1487,15 @@ dialog::backdrop {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 1.5rem;
   color: #303444;
-  padding-right: 40px;
+  padding-right: 25px;
   padding-bottom: 0;
 }
 
 .one-document span {
   cursor: pointer;
+  max-width:360px;
+  overflow:hidden;
+  overflow-wrap: anywhere;
 }
 
 .document-filename {
@@ -1527,7 +1516,7 @@ dialog::backdrop {
 }
 
 .one-document .download-span {
-  max-height: 12px;
+  max-height: 19px;
   width: 19px;
   max-width: 19px;
   color: #fff;
@@ -1535,6 +1524,7 @@ dialog::backdrop {
   border-radius: 20px;
   padding: 0 0 6px 6px;
   margin-top: 8px;
+  margin-left: 10px;
   min-width: 18px;
 }
 
@@ -1633,6 +1623,32 @@ dialog::backdrop {
 .button-flex {
   display: flex;
   flex-direction: row-reverse;
+}
+
+.toast {
+  position: fixed;
+  bottom: 140px;
+  left: calc(50% - width / 2);
+  background-color: #fdfcfc;
+  color: rgb(70, 33, 33);
+  padding: 16px 20px;
+  border: #60f3fd solid 1px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  z-index: 1000;
+  
+  /* Анимация */
+  opacity: 0;
+  transform: translateY(50px);
+  transition: opacity 0.5s, transform 0.5s;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 @media (max-width: 768px) {

@@ -70,7 +70,7 @@ class TasksOrm(Base):
     )
     deadline: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=True)
     completed: Mapped[int] = mapped_column(Integer, server_default="0")
-    title: Mapped[str] = mapped_column(String(255), unique=True, nullable=False) 
+    title: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True) 
     description: Mapped[str] = mapped_column(String(4000), nullable=False) 
 
 class CommentsOrm(Base):
@@ -137,7 +137,7 @@ class Tasks(BaseModel):
 class TaskEdit(BaseModel):
     id: Annotated[int, Gt(0)]
     userid: Annotated[int, Gt(0)]
-    messtext: Annotated[str, AfterValidator(str.strip), MinLen(1), MaxLen(2000)]
+    messtext: Annotated[str, AfterValidator(str.strip), MinLen(11), MaxLen(2000)]
 
 class DeadlineEdit(BaseModel):
     id: Annotated[int, Gt(0)]

@@ -357,7 +357,13 @@ async def add_task(new_task: Tasks, session: SessionDep, current_user: UserInfo 
     result = await session.execute(sql, {"id": new_task.id}) 
     row = result.first()
     if row:   
-        newTaskOrm: TasksOrm = TasksOrm(creator=new_task.creator, respons=new_task.respons, deadline=new_task.deadline, title=new_task.title, description=row.messtext)
+        task_description: str = row.messtext
+        sql: TextClause = text("SELECT t.id FROM tasks t WHERE t.title=:title") 
+        result = await session.execute(sql, {"title": new_task.title}) 
+        row = result.first()
+        if row:
+            return {"result": "error", "details": "Task with the same title already exists" if settings.language == "en" else "Задача с таким названием уже существует"}   
+        newTaskOrm: TasksOrm = TasksOrm(creator=new_task.creator, respons=new_task.respons, deadline=new_task.deadline, title=new_task.title, description=task_description)
         try:
             session.add(newTaskOrm)
             await session.commit()
@@ -366,13 +372,13 @@ async def add_task(new_task: Tasks, session: SessionDep, current_user: UserInfo 
         except IntegrityError as e:
             await session.rollback()
             logger.error("Error occurred while trying to add task: this message is already added to 'Tasks'")
-            return {"result": "already exists"}
+            return {"result": "error", "details": "Task already exists" if settings.language == "en" else "Задача с таким сообщением уже существует"}
         except Exception as e:
             await session.rollback()
             logger.error(f"Error occurred while trying to add task: {e}")    
-            return {"result": "error"}    
+            return {"result": "error", "details": "An error occurred while adding the task" }    
     else:
-        return {"result": "Source message was not found"}
+        return {"result": "error", "details": "Source message was not found"}
 
 
 # Close the task (only for the task creator)
@@ -396,19 +402,19 @@ async def edit_task(task: TaskEdit, session: SessionDep, current_user: UserInfo 
         await session.commit()
         return {"result": "ok"}
     else:
-        return {"result": "error", "details": "denied"}
+        return {"result": "error", "details": "you are not the creator of the task" if settings.language == "en" else "вы не являетесь создателем задачи"}
 
 
 # Edit the task deadline (only for the task creator)
-@app.post("/tasks/deadline/edit", tags=["Communicator", "tasks", "close"], summary="close the task")
+@app.post("/tasks/deadline/edit", tags=["Communicator", "tasks", "deadline"], summary="edit task deadline")
 async def edit_deadline(deadline: DeadlineEdit, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
     if (current_user.userid == deadline.userid):
-        sql: TextClause = text("UPDATE tasks SET deadline=:deadline WHERE id=:id") 
+        sql: TextClause = text("UPDATE tasks SET deadline=:deadline WHERE id=:id AND :deadline >= CURRENT_DATE") 
         result = await session.execute(sql, {"deadline": deadline.deadline, "id": deadline.id}) 
         await session.commit()
         return {"result": "ok"}
     else:
-        return {"result": "error", "details": "denied"}
+        return {"result": "error", "details": "you are not the creator of the task" if settings.language == "en" else "вы не являетесь создателем задачи"}
 
 
 # Add a new personal message to the personal messages list for the current user
@@ -421,7 +427,7 @@ async def add_personal_message(message: Message, current_user: UserInfo = Depend
         logger.info("Created new personal message from " + current_user.username)
         return {"result": "ok"}
     else:
-        return {"result": "duplicated message"}
+        return {"result": "error", "details": "duplicated message" if settings.language == "en" else "сообщение уже существует"}
     
 
 # Get all personal messages for the current user
@@ -432,39 +438,32 @@ async def get_personal_message(current_user: UserInfo = Depends(get_current_user
 
 # Delete a message and its associated files
 @app.delete("/messages/delete/{id}", tags=["Communicator", "message", "delete"], summary="delete message")
-async def del_message(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
-    sql: TextClause = text("SELECT a.id FROM tasks a WHERE a.id=:mess_id LIMIT 1")
+async def del_message(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict: 
+    sql: TextClause = text("SELECT a.filename FROM documents a WHERE a.mess_id=:mess_id LIMIT 1")
     result = await session.execute(sql, {"mess_id": id})
     row = result.first()   
-    # if the message is listed in the active tasks - we must not delete it from the messages
+    # if the file is listed in the important documents - we must not delete it from the messaages and from the disk!
     if row:  
-        return {"result": "error", "details": "This message is listed in active tasks"} 
-    else:   
-        sql: TextClause = text("SELECT a.filename FROM documents a WHERE a.mess_id=:mess_id LIMIT 1")
+        return {"result": "error", "details": "This message is listed in important documents"}
+    else:    
+        sql: TextClause = text("SELECT a.filename FROM attachments a WHERE a.mess_id=:mess_id LIMIT 1")
         result = await session.execute(sql, {"mess_id": id})
         row = result.first()   
-        # if the file is listed in the important documents - we must not delete it from the messaages and from the disk!
+        # if the file from attachments is not listed in the important documents - delete it from disk
         if row:  
-            return {"result": "error", "details": "This message is listed in important documents"}
-        else:    
-            sql: TextClause = text("SELECT a.filename FROM attachments a WHERE a.mess_id=:mess_id LIMIT 1")
-            result = await session.execute(sql, {"mess_id": id})
-            row = result.first()   
-            # if the file from attachments is not listed in the important documents - delete it from disk
-            if row:  
-                delete_file_from_disk(row.filename, UPLOAD_DIR)
-                # теперь удалим записи в базе данных   
-                sql: TextClause = text("DELETE FROM attachments WHERE mess_id=:id") 
-                result = await session.execute(sql, {"id": id})         
+            delete_file_from_disk(row.filename, UPLOAD_DIR)
+            # теперь удалим записи в базе данных   
+            sql: TextClause = text("DELETE FROM attachments WHERE mess_id=:id") 
+            result = await session.execute(sql, {"id": id})         
 
-            sql = text("DELETE FROM mess_likes WHERE mess_id=:id") 
-            result = await session.execute(sql, {"id": id})         
-            sql = text("DELETE FROM mess_read WHERE mess_id=:id") 
-            result = await session.execute(sql, {"id": id})         
-            sql = text("DELETE FROM messages WHERE id=:id") 
-            result = await session.execute(sql, {"id": id}) 
-            await session.commit()
-            return {"result": "ok"}
+        sql = text("DELETE FROM mess_likes WHERE mess_id=:id") 
+        result = await session.execute(sql, {"id": id})         
+        sql = text("DELETE FROM mess_read WHERE mess_id=:id") 
+        result = await session.execute(sql, {"id": id})         
+        sql = text("DELETE FROM messages WHERE id=:id") 
+        result = await session.execute(sql, {"id": id}) 
+        await session.commit()
+        return {"result": "ok"}
 
 
 # Delete a document from the important documents list
@@ -496,7 +495,6 @@ async def get_ducuments(session: SessionDep, currnet_user: UserInfo = Depends(ge
     return result.mappings().all()
 
 
-
 # Add a new document to the important documents list
 @app.post("/documents/add",  tags=["Communicator", "documents", "add"], summary="Add a new document")
 async def add_document(new_doc: Docs, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
@@ -513,13 +511,13 @@ async def add_document(new_doc: Docs, session: SessionDep, current_user: UserInf
         except IntegrityError as e:
             await session.rollback()
             logger.error(f"Error occurred while trying to add already added document. {e}")
-            return {"result": f"Document {row.origname} is already added"}            
+            return {"result": "error", "details": f"Document {row.origname} is already added" if settings.language == "en" else f"Документ {row.origname} уже существует"}
         except Exception as e:
             await session.rollback()
-            logger.error(f"Error occurred while trying to add document: {e}")    
-            return {"result": "error"}
+            logger.error(f"Error occurred while trying to add document: {e}")
+            return {"result": "error", "details": "An error occurred while adding the document" if settings.language == "en" else "Произошла ошибка при добавлении документа"}
     else:
-        return {"result": "Source file was not found in attachments"}    
+        return {"result": "error", "details": "Source file was not found in attachments"}    
 
 
 # Download the file from important document lists\s item  
@@ -545,7 +543,7 @@ async def add_doc_description(descr: DocsNotes, session: SessionDep, current_use
     except Exception as e:
         await session.rollback()
         logger.error(f"Error occurred while trying to add document description: {e}")    
-        return {"result": "error"}               
+        return {"result": "error", "details": "An error occurred while adding the document description" if settings.language == "en" else "Произошла ошибка при добавлении описания документа"}               
 
 
 # add / update user's full name
@@ -559,7 +557,7 @@ async def add_fio(user_fio: UserFio, session: SessionDep, current_user: UserInfo
     except Exception as e:
         await session.rollback()
         logger.error(f"Error occurred while trying to update user's full name: {e}")    
-        return {"result": "error"}               
+        return {"result": "error", "details": "An error occurred while updating the user's full name" if settings.language == "en" else "Произошла ошибка при обновлении полного имени пользователя"}
 
 
 # add new comment to the task
@@ -575,7 +573,7 @@ async def add_comment(new_comment: Comments, session: SessionDep, current_user: 
     except Exception as e:
         await session.rollback()
         logger.error(f"Error occurred while trying to add comment: {e}")
-        return {"result": "error", "details": str(e)}
+        return {"result": "error", "details": "An error occurred while adding the comment" if settings.language == "en" else "Произошла ошибка при добавлении комментария"}
 
 
 @app.exception_handler(HTTPException)
@@ -593,12 +591,19 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     
     for error in exc.errors():
         err_type = error['type']
-        if settings.language == "ru":
-            template = ERROR_MESSAGES_RU.get(err_type, error['msg']) 
-        else:
-            template = ERROR_MESSAGES_EN.get(err_type, error['msg']) 
+        err_field = None
+        template = ""
 
-        readable_errors.append(template)
+        if settings.language == "ru":
+            template = ERROR_MESSAGES_RU.get(err_type, error['msg'] if error['msg'] else " Ошибка валидации данных")
+        else:
+            template = ERROR_MESSAGES_EN.get(err_type, error['msg'] if error['msg'] else "Validation error")
+
+        if err_type.startswith("value_error") or err_type.startswith("type_error"):
+                err_field = ",".join(str(loc) for loc in error['loc'])
+        err_field = "" if err_field is None else err_field.replace("body,","").replace("query,","").replace("path,","").replace("header,","").replace("cookie,","")
+
+        readable_errors.append(template + (f" ({err_field})" if err_field != ""  else ""))
 
     final_msg = " | ".join(readable_errors)
 

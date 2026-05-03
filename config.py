@@ -9,6 +9,8 @@ ERROR_MESSAGES_RU = {
     "value_error.email": "Некорректный адрес электронной почты",
     "string_too_short": "Минимум символов: {min_length}",
     "string_too_long": "Максимум символов: {max_length}",
+    "too_short": "Слишком короткая строка",
+    "too_long": "Превышена максимальная длина строки",
     "less_than_equal": "Значение должно быть <= {le}",
     "greater_than_equal": "Значение должно быть >= {ge}",
     "value_error": "Некорректное значение",
@@ -41,7 +43,9 @@ ERROR_MESSAGES_RU = {
     "user_info_updated": "Информация о пользователе успешно обновлена",
     "user_info_update_error": "Произошла ошибка при попытке обновить информацию о пользователе",
     "You are not authorized": "Вы не авторизованы", 
-    "date_in_past": "Дата не может быть в прошлом"
+    "date_in_past": "Дата не может быть в прошлом",
+    "duplicated_message": "Сообщение уже существует", 
+    "Method Not Allowed": "Введены неверные данные"    
 }
 
 ERROR_MESSAGES_EN = {
@@ -49,6 +53,8 @@ ERROR_MESSAGES_EN = {
     "value_error.email": "Invalid email address",
     "string_too_short": "Minimum characters: {min_length}",
     "string_too_long": "Maximum characters: {max_length}",
+    "too_short": "Too short string",
+    "too_long": "Too long string",
     "less_than_equal": "Value must be <= {le}",
     "greater_than_equal": "Value must be >= {ge}",
     "value_error": "Invalid value",
@@ -81,7 +87,9 @@ ERROR_MESSAGES_EN = {
     "user_info_updated": "User info successfully updated",
     "user_info_update_error": "Error occurred while trying to update user info",
     "You are not authorized": "You are not authorized",
-    "date_in_past": "Date cannot be in the past"
+    "date_in_past": "Date cannot be in the past",
+    "duplicated_message": "Message already exists", 
+    "Method Not Allowed": "Method Not Allowed" 
 }   
 
 
