@@ -21,7 +21,7 @@
                 <div id="switch-label" class="switch-label">{{switch_label}}</div>
             </div>
             <div id="app-name" title="{{chat_header_title}}">{{app_name}}</div>
-            <div class="someclass whitebg" id="user_name" onclick="show_user_dialog()">{{username}}</div>
+            <div class="someclass whitebg" id="user_name" onclick="show_user_dialog()" title="{{user_name_title}}">{{username}}</div>
 
             <div class="sliding-panel" id="sliding-panel">
                 <div class="zag">
@@ -159,6 +159,7 @@
     <dialog id="userDlg" data-userid="{{userid}}">
         <p>{{userDlg_title}} ({{username}}):</p>
         <div><input type="text" name="fio" id="fio" maxlength="100" placeholder="{{fio_placeholder}}" value=""></div>
+        <select id="avatar_sel"> </select>
         <button id="fio_cancel">{{fio_cancel}}</button>
         <button id="fio_confirm">{{fio_confirm}}</button>
     </dialog>
@@ -366,12 +367,12 @@
                 if (users.username != userName) {
                     title_cl = `title="${users.fio}&#10;{{send_personal_message_title2}}" onclick="personal_message(${users.userid}, '${userName}')"`;
 
-                } else { title_cl = `style="cursor:default;" title="${users.fio}"`; userDlg.dataset.fio = users.fio; }
+                } else { title_cl = `style="cursor:default;" title="${users.fio}"`; userDlg.dataset.fio = users.fio; userDlg.dataset.avatar = users.avatar; }
 
                 if ((users.active) || (users.username == userName)) {
-                    tempStr = tempStr + `<div class="cloud-text-wrapper"><span class="one_user active_user" ${title_cl}>${users.username}</span></div>`;
+                    tempStr = tempStr + `<div class="cloud-text-wrapper"><span class="one_user active_user" ${title_cl}><b>${users.avatar}</b>${users.username}</span></div>`;
                 } else {
-                    tempStr = tempStr + `<div class="cloud-text-wrapper"><span class="one_user" ${title_cl}>${users.username}</span></div>`;
+                    tempStr = tempStr + `<div class="cloud-text-wrapper"><span class="one_user" ${title_cl}><b>${users.avatar}</b>${users.username}</span></div>`;
                 }
             });
             usersList.innerHTML = tempStr;
@@ -456,7 +457,7 @@
                     }
 
                     let tempHTML = `
-                    <span class="username" onclick="like_click(${msg.id}, '${msg.username}')">${msg.username}</span>
+                    <span class="username" onclick="like_click(${msg.id}, '${msg.username}')"><b>${msg.avatar}</b>${msg.username}</span>
                     <span class="messtext" id="mt_${msg.id}"${tmpTitle}>${messAtext}</span>`;
 
                     if ((msg.messtext.includes("&#128206")) || (msg.messtext.includes("<img")) || (msg.task == 1)) {
@@ -530,7 +531,7 @@
                             if (msg.messtext.includes("&#128206")) {
                                 mess_text = `<a href="/download-attachment/${msg.id}">${msg.messtext}</a>`;
                             }
-                            div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${mess_text}</span><span id="cr_${msg.id}" class="timestamp">${msg.created_at}</span>`;
+                            div.innerHTML = `<span class="username"><b>${msg.avatar}</b>${msg.username}</span><span id="mt_${msg.id}" class="messtext">${mess_text}</span><span id="cr_${msg.id}" class="timestamp">${msg.created_at}</span>`;
                             div.dataset.noTask = 1;
                             if (msg.messtext.includes("&#128206")) {
                                 div.dataset.noFiles = 0;
@@ -540,8 +541,8 @@
                         } else {
                             div.dataset.noTask = 0;
                             div.dataset.noFiles = 1;
-                            div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${msg.messtext}</span>
-                    <span id="created_${msg.id}" class="timestamp click_me" title="{{create_task_timestamp_title3}}">${msg.created_at}</span>`;
+                            div.innerHTML = `<span class="username"><b>${msg.avatar}</b>${msg.username}</span><span id="mt_${msg.id}" class="messtext">${msg.messtext}</span>
+                                             <span id="created_${msg.id}" class="timestamp click_me" title="{{create_task_timestamp_title3}}">${msg.created_at}</span>`;
                         }
                         div.dataset.username = msg.username;
                         div.dataset.uniqJson = `{"id":${msg.id}, "username":"${msg.username}"}`;
@@ -873,9 +874,9 @@
                             if (msg.messtext.includes("&#128206")) {
                                 mess_text = `<a href="/download-attachment/${msg.id}">${mess_text}</a>`;
                             }
-                            div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${mess_text}</span><span id="cr_${msg.id}" class="timestamp">${msg.created_at}</span>`;
+                            div.innerHTML = `<span class="username"><b>${msg.avatar}</b>${msg.username}</span><span id="mt_${msg.id}" class="messtext">${mess_text}</span><span id="cr_${msg.id}" class="timestamp">${msg.created_at}</span>`;
                         } else {
-                            div.innerHTML = `<span class="username">${msg.username}</span><span id="mt_${msg.id}" class="messtext">${msg.messtext}</span><span id="created_${msg.id}" class="timestamp click_me" title="{{create_task_timestamp_title4}}">${msg.created_at}</span>`;
+                            div.innerHTML = `<span class="username"><b>${msg.avatar}</b>${msg.username}</span><span id="mt_${msg.id}" class="messtext">${msg.messtext}</span><span id="created_${msg.id}" class="timestamp click_me" title="{{create_task_timestamp_title4}}">${msg.created_at}</span>`;
                         }
                         div.dataset.username = msg.username;
                         div.dataset.uniqJson = `{"id":${msg.id}, "username":"${msg.username}"}`;
@@ -1598,13 +1599,14 @@
                 credentials: 'include',
                 body: JSON.stringify({
                     userid: userDlg.dataset.userid,
-                    fio: document.getElementById('fio').value
+                    fio: document.getElementById('fio').value, 
+                    avatar: document.getElementById('avatar_sel').value
                 })
             });
             const data = await response.json();
             if (data) {
                 if (data.result == "OK") {
-                    console.log(`Фамилия пользователя ${userName} изменена`);
+                    console.log(`Users fullname / avatar ${userName} were changed`);
                     fetchActivUsers();
                 }
             }
@@ -1614,6 +1616,33 @@
 
         function show_user_dialog() {
             document.getElementById('fio').value = userDlg.dataset.fio;
+            const select = document.querySelector('#avatar_sel');
+            const data = ['&#127939;','&#9792;','&#128694;','&#128187;', '&#128300;', '&#129489;',
+            '&#128295;','&#128188;','&#128105;','&#9992;','&#128373;','&#129333;','&#129464;','&#129499;',
+            '&#9794;','&#127947;','&#128692;','&#128483;','&#128100;','&#9878;',
+            '&#128736;','&#128737;','&#128279;','&#9879;','&#128137;','&#129520;',
+            '&#128294;','&#128304;','&#129334;','&#127891;','&#127872;','&#128125;','&#8986;','&#129338;',
+            '&#127955;','&#129343;','&#127936;','&#128224;','&#128084;','&#129335;','&#128068;',
+            '&#129456;','&#128587;','&#128065;','&#129781;','&#127911;','&#128421;','&#128181;',
+            '&#129719;','&#127797;','&#127803;','&#129419;','&#129436;','&#128059;','&#128047;','&#127917;',
+            '&#129512;','&#127895','&#128116;','&#129459;','&#128590;','&#127908;','&#127912;','&#128640;',
+            '&#129497;','&#129399;','&#129332;','&#129493;','&#128115;','&#128119','&#129494;','&#128110;',
+            '&#128130;','&#129501;','&#129500;','&#129409;','&#127994;','&#129302;','&#127866;',
+            '&#127928;','&#128122;','&#127749;','&#127752;','&#128293;','&#127757;','&#127949;','&#128690;',
+            '&#128054;','&#9775;','🂡','⚽','☕','&#128049;','&#128511;','&#128378;','&#128513;','&#128144;',
+            '&#128302;','&#128148;','&#128102;','&#128118;','&#128099;', '&#129309;','&#128202;'];
+            const fragment = document.createDocumentFragment();   
+            data.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item;
+                option.innerHTML = item;
+                if (item == userDlg.dataset.avatar) {
+                    option.selected = true; 
+                }
+                fragment.appendChild(option); 
+            });
+            select.appendChild(fragment);                     
+
             userDlg.showModal();
         }
 

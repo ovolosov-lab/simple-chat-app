@@ -102,9 +102,9 @@ async def messages(id: int, session: SessionDep, current_user: UserInfo = Depend
     result: Result[Any]
     if id <= 0:
         sql: TextClause = text("""
-           SELECT t.id, t.username, t.messtext, t.created_at, t.checked, t.likes, t.task 
+           SELECT t.id, t.username, t.messtext, t.created_at, t.checked, t.likes, t.task, t.avatar 
            FROM (
-             SELECT m.id, u.username, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
+             SELECT m.id, u.username, u.avatar, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
                (SELECT count(*) FROM mess_read R WHERE R.mess_id=m.id) as checked, 
                (SELECT count(*) FROM mess_likes R WHERE R.mess_id=m.id) as likes, 0 as task          
              FROM messages m INNER JOIN users u ON m.userid=u.userid 
@@ -114,7 +114,7 @@ async def messages(id: int, session: SessionDep, current_user: UserInfo = Depend
         result = await session.execute(sql, {"max_mess_count": settings.current_messages_max_count}) 
     else: 
         sql: TextClause = text(""" 
-            SELECT m.id, u.username, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
+            SELECT m.id, u.username, u.avatar, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
             (SELECT count(*) FROM mess_read R WHERE R.mess_id=m.id) as checked, 
             (SELECT count(*) FROM mess_likes R WHERE R.mess_id=m.id) as likes, 0 as task                                  
             FROM messages m INNER JOIN users u ON m.userid=u.userid 
@@ -216,7 +216,7 @@ async def message_like(like: MessId, session: SessionDep, current_user: UserInfo
 # Get the list of all users with their activity status (active/inactive) and fio for the personal messages page
 @app.get("/users/get_activity", tags=["Communicator", "users", "activity"], summary="Get list of the activ users")
 async def get_users_activity(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql: TextClause = text("SELECT u.userid, u.username, u.active, u.fio FROM users u ORDER BY u.username") 
+    sql: TextClause = text("SELECT u.userid, u.username, u.active, u.fio, u.avatar FROM users u ORDER BY u.username") 
     result = await session.execute(sql) 
     return result.mappings().all()
 
@@ -287,7 +287,7 @@ async def download_file(session: SessionDep, id: int, current_user: UserInfo = D
 async def prev_messages(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
     sql: TextClause = text("""
         SELECT m.id, u.username, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
-        (SELECT count(*) FROM mess_read R WHERE R.mess_id=m.id) as checked  
+        (SELECT count(*) FROM mess_read R WHERE R.mess_id=m.id) as checked, u.avatar  
         FROM messages m INNER JOIN users u ON m.userid=u.userid 
         WHERE m.id < :mess_id  
         ORDER BY m.id DESC LIMIT :max_mess_count 
@@ -550,9 +550,9 @@ async def add_doc_description(descr: DocsNotes, session: SessionDep, current_use
 # add / update user's full name
 @app.post("/users/fio", tags=["Communicator", "users", "fio"], summary="add first / last names")
 async def add_fio(user_fio: UserFio, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
-    sql: TextClause = text("""UPDATE users SET fio=:fio WHERE userid=:userid""")
+    sql: TextClause = text("""UPDATE users SET fio=:fio, avatar=:avatar WHERE userid=:userid""")
     try:
-        await session.execute(sql, {"fio": user_fio.fio, "userid": user_fio.userid}) 
+        await session.execute(sql, {"fio": user_fio.fio, "avatar": user_fio.avatar, "userid": user_fio.userid}) 
         await session.commit()
         return {"result": "OK"}
     except Exception as e:

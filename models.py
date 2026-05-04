@@ -22,7 +22,9 @@ class UserOrm(Base):
         DateTime(timezone=False), 
         server_default=func.now(),
         index=True
-    )    
+    )  
+    avatar: Mapped[str] = mapped_column(String(10), nullable=True, default='&#129489')  
+
 
 class MessageOrm(Base):
     __tablename__ = "messages"
@@ -154,6 +156,7 @@ class DeadlineEdit(BaseModel):
 class UserFio(BaseModel):
     userid: Annotated[int, Gt(0)]  
     fio: Annotated[str, AfterValidator(lambda v: v.strip().title()), MinLen(3), MaxLen(100)]
+    avatar: Annotated[str, AfterValidator(str.strip), MinLen(3), MaxLen(10)]   
 
 class Docs(BaseModel):
     mess_id: Annotated[int, Gt(0)]

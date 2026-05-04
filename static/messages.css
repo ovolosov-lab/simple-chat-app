@@ -237,6 +237,7 @@ body.dark-theme .my-message-box-right {
   display: block;
   margin-bottom: 4px;
   cursor: pointer;
+  margin-left: -2px;
 }
 
 .messtext {
@@ -1526,10 +1527,24 @@ dialog::backdrop {
   min-width: 18px;
 }
 
+#userDlg p {
+  margin-top:0;
+  color:#01197a;
+}
+
 #userDlg input {
   width: 200px;
   padding: 9px;
-  background: #cef1ff
+  background: #cef1ff;
+  border-radius: 8px;
+}
+
+#userDlg select {
+    padding: 5px;
+    margin-right: 10px;
+    font-size: 1.3rem;
+    border: #333333 solid 2px;
+    border-radius: 8px;
 }
 
 .add_comments {

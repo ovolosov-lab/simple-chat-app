@@ -98,5 +98,6 @@
     "the_same_file": "Такой файл уже отправляли", 
     "welcome": "welcome_ru.json",
    "deadline_header": "Изменить срок исполнения",
-   "DocumDelete_question": "Удалить документ ?"    
+   "DocumDelete_question": "Удалить документ ?", 
+   "user_name_title": "Кликни, чтобы изменить ФИО и аватар"  
 }   
