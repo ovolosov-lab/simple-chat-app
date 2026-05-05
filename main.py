@@ -12,12 +12,12 @@ import uvicorn
 from fastapi import Cookie, FastAPI, File, Form, Depends, HTTPException, Header, Request, UploadFile
 from database import db_connection_check, engine, SessionDep, check_user, create_all_tables, user_exists, new_session
 from models import Base, Comments, CommentsOrm, DeadlineEdit, DocsNotes, MessId, Message, MessageOrm, NewUser, TaskEdit, Tasks, TasksOrm, User, UserFio, UserInfo, UserOrm, Docs, DocsOrm 
-from sheduler import AsyncPeriodicTask
+from sheduler import AsyncPeriodicTask, AsyncDailyTask
 from tokens import create_access_token, get_current_user 
 from sqlalchemy.exc import IntegrityError
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings, logger, ERROR_MESSAGES_EN, ERROR_MESSAGES_RU
-from services import ProtectedStaticFiles, create_new_user, delete_file_from_disk, load_internationalization_data, background_checks, makeFileResponse, no_have_such_message, get_personal_messages, personal, save_user_file_to_disk, how_much_messages
+from services import ProtectedStaticFiles, create_new_user, delete_file_from_disk, load_internationalization_data, background_checks, makeFileResponse, no_have_such_message, get_personal_messages, personal, save_user_file_to_disk, how_much_messages, notify_deadlines
 
 
 BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
@@ -37,10 +37,14 @@ async def lifespan(app: FastAPI):
     # Background task for checking users activity every XX minutes (if there are messages read or sent in the last XX minutes - user is active, if not - user is inactive)
     periodic_task = AsyncPeriodicTask(interval=settings.users_activity_check_interval, task_func=lambda: background_checks(new_session))
     periodic_task.start()
-    
+    # Daily task for notifying about deadlines (every day at 8:00 AM)
+    daily_task = AsyncDailyTask(target_hour=8, target_minute=0, task_func=lambda: notify_deadlines(new_session))
+    daily_task.start()
+
     yield
 
     await periodic_task.stop()
+    await daily_task.stop()
     # Closing the database connection pool at shutdown
     await engine.dispose()
 

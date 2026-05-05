@@ -16,8 +16,9 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from database import SessionDep, async_sessionmaker, check_user
 from config import settings, logger
-from models import NewUser, UserOrm
+from models import NewUser, TasksOrm, UserOrm
 from tokens import create_access_token, get_current_user
+from sqlalchemy import select, cast, Date
 
 
 personal = list()
@@ -170,3 +171,23 @@ async def how_much_messages(session: SessionDep) -> int:
     sql = text("SELECT COUNT(*) FROM messages")
     result = await session.execute(sql)
     return result.scalar() or 0
+
+
+async def notify_deadlines(session_factory: async_sessionmaker) -> None:
+    async with session_factory() as session:
+        today = datetime.now().date()
+        sql = select(TasksOrm).where(
+            cast(TasksOrm.deadline, Date) == today,
+            TasksOrm.completed == 0
+        )
+        result = await session.execute(sql)
+        tasks = result.scalars().all()
+        
+        for task in tasks:
+            mess_text = f"Задача {task.title} сегодня должна быть завершена" if settings.language == "ru" else f"Task {task.title} must be completed today"     
+            personal.append({
+                'to': task.respons,
+                'from': 'System',
+                'created_at': datetime.now(),
+                'messtext': mess_text
+            })

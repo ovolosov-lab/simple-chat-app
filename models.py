@@ -70,7 +70,7 @@ class TasksOrm(Base):
         DateTime(timezone=False), 
         server_default=func.now()
     )
-    deadline: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=True)
+    deadline: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False, index=True)
     completed: Mapped[int] = mapped_column(Integer, server_default="0")
     title: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True) 
     description: Mapped[str] = mapped_column(String(4000), nullable=False) 
