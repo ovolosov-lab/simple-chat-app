@@ -164,7 +164,7 @@
         <button id="fio_confirm">{{fio_confirm}}</button>
     </dialog>
 
-    <dialog id="file_upload_block" class="fileUploadDiv" data-filename="">
+    <dialog id="file_upload_block" class="fileUploadDiv" data-filename="" data-url="">
         <input type="file" id="fileInput" placeholder="{{fileInput_placeholder}}" on style="height:20px;">
         <div><button id="upload_btn" class="blue-button">{{upload_btn}}</button> <button onclick="closeUploadDialog()"
                 class="blue-button">{{close_file_btn}}</button></div>
@@ -242,6 +242,7 @@
         const searchBtn = document.getElementById('searchBtn');
         const searchInput = document.getElementById('searchInput');
         const documDelDialog = document.getElementById('documDelDialog');
+        const uploadDialog = document.getElementById('file_upload_block');
 
 
         //  --------------------------------------------------------------
@@ -266,19 +267,19 @@
         });
 
         document.getElementById("attach_file_btn").addEventListener('click', (e) => {
-            uploadDialog = document.getElementById('file_upload_block');
-            //const button = document.getElementById('upload_btn');
-            //const button2 = document.getElementById('send_message_btn');
+            uploadDialog.dataset.url = "'/message-attachment/'";
             uploadDialog.showModal();
             e.stopPropagation();
         })
 
+        function task_attachment_add(task_id) {
+            uploadDialog.dataset.url = '/task-attachment/'+task_id;
+            uploadDialog.showModal();
+            event.stopPropagation();
+        }
+
         function closeUploadDialog() {
-            const uploadDialog = document.getElementById('file_upload_block');
-            //const button = document.getElementById('upload_btn');
-            //const button2 = document.getElementById('send_message_btn');
-            //button.disabled = !button.disabled;
-            //button2.disabled = !button2.disabled;       
+            const uploadDialog = document.getElementById('file_upload_block');    
             uploadDialog.close();
         }
 
@@ -908,7 +909,7 @@
         }
 
 
-        //  загрузка вложения к сообщению (file upload) - по клику на кнопке
+        //  file upload ( as message or as task attachment ) handler 
         document.getElementById("upload_btn").onclick = async (e) => {
             e.preventDefault();
             const uploadBlock = document.getElementById('file_upload_block');
@@ -935,8 +936,9 @@
 
             status.innerText = "{{upload_in_progress}}";
 
+            let url = uploadDialog.dataset.url;
             try {
-                const response = await fetch('/upload-attachment/', {
+                const response = await fetch(url, {
                     method: 'POST',
                     body: formData,
                     credentials: 'include'
@@ -962,11 +964,10 @@
                 status.innerText = "{{Unsuccessful_upload}}";
             }
             fileInput.value = ''; // Сброс выбора файла
-            //document.getElementById('upload_btn').disabled = true;
+            
             uploadBlock.close();
             e.stopPropagation
         }
-
 
 
         // Отправка сообщения по нажатию клавиши Enter 
@@ -1047,7 +1048,7 @@
                 console.log("Тема сохранена:", localStorage.getItem('theme'));
 
             } else if (clickedElement.closest("#tasks_docs")) {
-                console.log("Событие смены режима Задачи / Документы");
+                console.log("Mode change event: Tasks / Docs");
                 if (tasksDocsBtn.dataset.action == 'docs') {
                     console.log("В задачи");
                     tasksDocsBtn.dataset.action = 'tasks';
@@ -1076,7 +1077,7 @@
                     if (sl_pan.classList.contains("panel-opened")) {     //  закрыть открытую ранее дополнительную панель (sliding panel)
                         searchInput.classList.remove('si_active');
                         sl_pan.classList.remove('panel-opened');
-                    } //else if (tasksDiv.classList.contains("taskDiv_opened")) {   // обработка события Закрыть блок добавления новой задачи
+                    } //else if (tasksDiv.classList.contains("taskDiv_opened")) {   
                       //    tasksDiv.classList.remove("taskDiv_opened");
                       // }
                 }
@@ -1090,7 +1091,6 @@
                         document.getElementById("task_id").value = clickedElement.id.replace("created_", "");
                         console.log(document.getElementById("task_id").value);
                         tasksDiv.showModal();
-                        // tasksDiv.classList.add("taskDiv_opened");
                     }
                 }
             }
@@ -1160,28 +1160,37 @@
                 let dTitle = "";
                 let tmp0 = "";
                 if (task.creator == userName) {
-                    tmp0 = `<div class="close-task" onclick="closeTask(${task.id})"> {{closeTaskButton}} </div>`;
+                    tmp0 = `<button class="close-task margin-right-10" onclick="closeTask(${task.id})" title="{{closeTaskButton}}">&#10060;</button>`;
                     dTitle = "You can change it";
                 } else {
-                    tmp0 = `<div class="close-task disabled"> {{closeTaskButton}} </div>`;
+                    tmp0 = `<button class="close-task disabled margin-right-10" title="{{closeTaskButton}}">&#10060;</button>`;
                 }
 
                 let tmpHtml = `<span class="task_header">{{task_created_at}}: <b>${task.created_at}</b> <div class="task_title"><span class="task_title_span">${task.title}</span></div></span>
                        <span class="task_header">{{task_owner}}: <b>${task.creator}</b></span>
-                       <span class="task_header"><span id="deadline_${task.id}" onclick="edit_deadline(${task.id}, '${task.deadline}', '${task.creator}')" class="deadline" title='${dTitle}'>{{task_deadline}}: <b>${task.deadline}</b></span> ${tmp0}</span>
+                       <span class="task_header"><span id="deadline_${task.id}" onclick="edit_deadline(${task.id}, '${task.deadline}', '${task.creator}')" class="deadline" title='${dTitle}'>{{task_deadline}}: <b>${task.deadline}</b></span>
+                        ${tmp0} <button class="close-task" id="task_att_${task.id}" onclick="task_attachment_add(${task.id})">&#128450;&#65039;</button></span>
                        <span class="task_header">{{task_performer}}: <b>${task.respons}</b></span>
                        <hr class="task_header_line"/>
                        <div id="z_${task.id}" class="task_text${task_expired}" onclick="edit_task(${task.id}, '${task.creator}')" onfocusout="finish_task_edit(this)"  contenteditable="false">${task.description}</div>
-                       <div id="z_add_comment_${task.id}" class="comment"></div>
-                       <details><summary class="comments_header">{{task_comments}}:</summary>`;
+                       <div id="z_add_comment_${task.id}" class="comment"></div><div class="details-wrapper" id="wrapper_${task.id}">
+                       <details id="comdet_${task.id}" ontoggle="commentDetailsToggle(${task.id});"><summary class="comments_header">{{task_comments}}:</summary>`;
                 if (task.comments.length > 0) {
                     task.comments.forEach(comm => {
-                        tmpHtml += `<div class="one_comment"><div class="comment_username">${comm.username}:</div><div class="comment_text">${comm.comment}</div>
+                        tmpHtml += `<div class="one_comment content"><div class="comment_username">${comm.username}:</div><div class="comment_text">${comm.comment}</div>
                                 <div class="comment_timestamp">${comm.created_at}</div></div>`;
                     });
                 }
 
-                tmpHtml += `</details><div class="add_comments" onclick="add_comment(${task.id})">{{task_add_comment}}</div><hr class="task_line"/>`;
+                tmpHtml += `</details><details id="filesdet_${task.id}" ontoggle="filesDetailsToggle(${task.id});" class="task-attachments-details"><summary class="attachments_header">{{task_attachments}}:</summary>`;
+                if (task.attac.length > 0) {
+                    task.attac.forEach(fatt => {
+                        tmpHtml += `<div id="task_attac_file_${fatt.att_id}" class="content-attac" onclick="window.location='/tasks/download-file/${fatt.att_id}'">${fatt.filename}</div>`;
+                    });
+                }
+
+                tmpHtml += `</details> </div><div class="add_comments" onclick="add_comment(${task.id})">{{task_add_comment}}</div><hr class="task_line"/>`;
+
                 div.innerHTML = tmpHtml;
                 div.classList.add("task_card");
                 fragment.appendChild(div);
@@ -1192,6 +1201,34 @@
             div.innerHTML = `<div class="button-flex"><div class="close-task show-diagram" onclick="showDiagram()"> {{show_diagram}} </div> &#128202;</div>`;
             parentDiv.appendChild(div);
         }
+
+        function commentDetailsToggle( id ) {
+            const details = document.getElementById("comdet_"+id);
+            const other = document.getElementById("filesdet_"+id);
+            const wrapper = document.getElementById("wrapper_"+id);
+            if (details.open) {
+                other.open = false;
+                other.style = "display:none;";
+                wrapper.style = "flex-direction: column;";
+            } else {
+                wrapper.style = "flex-direction: row;";
+                other.style = "display:visible";
+            }
+        }        
+
+        function filesDetailsToggle( id ) {
+            const details = document.getElementById("filesdet_"+id);
+            const other = document.getElementById("comdet_"+id);
+            const wrapper = document.getElementById("wrapper_"+id);
+            if (details.open) {
+                other.open = false;
+                other.style = "display:none;";
+                wrapper.style = "flex-direction: column;";
+            } else {
+                wrapper.style = "flex-direction: row;";
+                other.style = "display:visible";
+            }
+        }        
 
         //  начать редактирование текста задачи по-месту-нахождения в карточке задачи
         function edit_task(task_id, creator) {

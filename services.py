@@ -13,7 +13,7 @@ import pathlib
 from fastapi import File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import text
+from sqlalchemy import TextClause, text
 from database import SessionDep, async_sessionmaker, check_user
 from config import settings, logger
 from models import NewUser, TasksOrm, UserOrm
@@ -191,3 +191,31 @@ async def notify_deadlines(session_factory: async_sessionmaker) -> None:
                 'created_at': datetime.now(),
                 'messtext': mess_text
             })
+
+
+async def notify_task_closing(session: SessionDep, task_id: int) -> None:
+    sql: TextClause = text("SELECT title, respons FROM tasks WHERE id=:id LIMIT 1") 
+    result = await session.execute(sql, {"id": task_id})
+    task = result.first() 
+    if task: 
+        mess_text = f"Задача {task.title} закрывается" if settings.language == "ru" else f"Task {task.title} is being closed"     
+        personal.append({
+            'to': task.respons,
+            'from': 'System',
+            'created_at': datetime.now(),
+            'messtext': mess_text
+        })       
+
+
+async def notify_all(session: SessionDep, message: str) -> None:
+    sql = select(UserOrm)
+    result = await session.execute(sql)
+    users = result.scalars().all()
+    for usr in users:
+        personal.append({
+            'to': usr.userid,
+            'from': 'System',
+            'created_at': datetime.now(),
+            'messtext':message
+        })
+

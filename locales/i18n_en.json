@@ -99,5 +99,6 @@
     "welcome": "welcome_en.json",
     "deadline_header": "Change task deadline",
     "DocumDelete_question": "Delete an important document?",
-    "user_name_title": "Click here to change your full name and avatar."
+    "user_name_title": "Click here to change your full name and avatar.",
+    "task_attachments": "Attached files"
 }

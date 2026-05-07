@@ -7,17 +7,17 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import Result, TextClause, text
+from sqlalchemy import Result, Select, TextClause, select, text
 import uvicorn
 from fastapi import Cookie, FastAPI, File, Form, Depends, HTTPException, Header, Request, UploadFile
 from database import db_connection_check, engine, SessionDep, check_user, create_all_tables, user_exists, new_session
-from models import Base, Comments, CommentsOrm, DeadlineEdit, DocsNotes, MessId, Message, MessageOrm, NewUser, TaskEdit, Tasks, TasksOrm, User, UserFio, UserInfo, UserOrm, Docs, DocsOrm 
+from models import Base, Comments, CommentsOrm, DeadlineEdit, DocsNotes, MessId, Message, MessageOrm, NewUser, TaskAttachmentsOrm, TaskEdit, Tasks, TasksOrm, User, UserFio, UserInfo, UserOrm, Docs, DocsOrm 
 from sheduler import AsyncPeriodicTask, AsyncDailyTask
 from tokens import create_access_token, get_current_user 
 from sqlalchemy.exc import IntegrityError
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings, logger, ERROR_MESSAGES_EN, ERROR_MESSAGES_RU
-from services import ProtectedStaticFiles, create_new_user, delete_file_from_disk, load_internationalization_data, background_checks, makeFileResponse, no_have_such_message, get_personal_messages, personal, save_user_file_to_disk, how_much_messages, notify_deadlines
+from services import ProtectedStaticFiles, create_new_user, delete_file_from_disk, load_internationalization_data, background_checks, makeFileResponse, no_have_such_message, get_personal_messages, notify_all, notify_task_closing, personal, save_user_file_to_disk, how_much_messages, notify_deadlines
 
 
 BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
@@ -238,7 +238,7 @@ async def first_id(session: SessionDep, current_user: UserInfo = Depends(get_cur
 
 
 # Upload the attachment file and add the message with the file link to the messages list
-@app.post("/upload-attachment/", tags=["Communicator", "files", "upload"], summary="attachment files uploading")
+@app.post("/message-attachment/", tags=["Communicator", "files", "upload"], summary="attachment files uploading")
 async def upload_file(session: SessionDep, file: UploadFile = File(...), current_user: UserInfo = Depends(get_current_user)) -> dict:
     result: dict = await save_user_file_to_disk(current_user.username, UPLOAD_DIR, file)
     
@@ -267,7 +267,29 @@ async def upload_file(session: SessionDep, file: UploadFile = File(...), current
         return result 
 
 
-# Download the attachment file
+# Upload the new attachment file for a task
+@app.post("/task-attachment/{task_id}", tags=["Communicator", "files", "upload"], summary="attachment files uploading")
+async def upload_task_attachment(task_id: int, session: SessionDep, file: UploadFile = File(...), current_user: UserInfo = Depends(get_current_user)) -> dict:
+    result: dict = await save_user_file_to_disk(current_user.username, UPLOAD_DIR, file)
+    
+    #  Writing file info to the database and linking it to the message   
+    if result['error'] == 'OK':
+        extension:str = result["ext"]
+        extension:str = extension.lower()
+        shortFileName:str = result["orig_filename"]   
+        if len(shortFileName) > 40:
+            shortFileName = shortFileName[:32] + '... ' + extension
+            
+        new_attachment: TaskAttachmentsOrm = TaskAttachmentsOrm(task_id=task_id, filename=result["unique_filename"], origname=shortFileName)
+        session.add(new_attachment)    
+        await session.commit()  
+        logger.success(f"File {file.filename} successfully uploaded")
+        return {"filename": file.filename, "status": "saved"}
+    else: 
+        return result 
+
+
+# Download the attachment file (message)
 @app.get("/download-attachment/{id}", tags=["Communicator", "files", "download"], summary="download the attachment file")
 async def download_file(session: SessionDep, id: int, current_user: UserInfo = Depends(get_current_user)):
     sql = text("SELECT B.origname, B.filename FROM attachments B WHERE B.mess_id=:id LIMIT 1")
@@ -285,6 +307,25 @@ async def download_file(session: SessionDep, id: int, current_user: UserInfo = D
     else:
         return {"error": ERROR_MESSAGES_EN.get("file_not_found","File not found") if settings.language == "en" else ERROR_MESSAGES_RU.get("file_not_found","Файл не найден")}
     
+
+# Download the task - attachment file
+@app.get("/tasks/download-file/{id}", tags=["Communicator", "files", "download"], summary="download the attachment file")
+async def download_task_attachment(session: SessionDep, id: int, current_user: UserInfo = Depends(get_current_user)):
+    sql = text("SELECT B.origname, B.filename FROM task_attachments B WHERE B.id=:id LIMIT 1")
+    result = await session.execute(sql, {"id": id})
+    row = result.first() 
+    if row:
+        file_path: str = os.path.join(UPLOAD_DIR, row.filename)   
+        if not os.path.exists(file_path):
+            return {"error": ERROR_MESSAGES_EN.get("file_not_found","File not found") if settings.language == "en" else ERROR_MESSAGES_RU.get("file_not_found","Файл не найден")}
+        return FileResponse(
+            path=file_path, 
+            filename=row.origname,  
+            media_type='application/octet-stream'
+        )
+    else:
+        return {"error": ERROR_MESSAGES_EN.get("file_not_found","File not found") if settings.language == "en" else ERROR_MESSAGES_RU.get("file_not_found","Файл не найден")}
+
 
 # Get the previous messages based on the message id (for infinite scroll implementation on the client side)
 @app.get("/messages/get_prev/{id}", tags=["Communicator", "messages history"], summary="Get all the previous messages")
@@ -331,7 +372,10 @@ async def get_tasks(session: SessionDep, current_user: UserInfo = Depends(get_cu
             SELECT COALESCE(json_agg(json_build_object('c_id', c.id, 'username', u.username, 'comment', c.comment, 'created_at', to_char(c.created_at, 'DD.MM.YYYY HH24:MI')) ORDER BY c.id ASC), '[]'::json) 
             FROM comments c INNER JOIN users u ON c.creator = u.userid
             WHERE c.task_id=t.id 
-        ) as comments          
+        ) as comments, (
+            SELECT COALESCE(json_agg(json_build_object('att_id', a.id, 'filename', a.origname) ORDER BY a.id ASC), '[]'::json)  
+            FROM task_attachments a WHERE a.task_id=t.id                              
+        ) as attac           
         FROM tasks t  
         INNER JOIN users u1 ON t.creator=u1.userid 
         INNER JOIN users u2 ON t.respons=u2.userid   
@@ -373,6 +417,8 @@ async def add_task(new_task: Tasks, session: SessionDep, current_user: UserInfo 
             session.add(newTaskOrm)
             await session.commit()
             logger.success(f"New task id: {new_task.id} successfully added")    
+            message: str = f"Создана новая задача: {new_task.title}" if settings.language == "ru" else f"New task was created: {new_task.title}"
+            await notify_all(session, message)
             return {"result": "ok"}
         except IntegrityError as e:
             await session.rollback()
@@ -389,12 +435,29 @@ async def add_task(new_task: Tasks, session: SessionDep, current_user: UserInfo 
 # Close the task (only for the task creator)
 @app.delete("/tasks/close/{id}", tags=["Communicator", "tasks", "close"], summary="close the task")
 async def close_task(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
-    sql: TextClause = text("DELETE FROM comments WHERE task_id=:id") 
-    result = await session.execute(sql, {"id": id}) 
-    sql: TextClause = text("DELETE FROM tasks WHERE id=:id") 
-    result = await session.execute(sql, {"id": id}) 
-    await session.commit()
-    return {"result": "ok"}
+    try:
+        # Найти приаттаченные файлы в task_attachments и удалить их с диска перед удалением задачи !!! 
+        sql: TextClause = text("SELECT a.filename FROM task_attachments a WHERE a.task_id=:task_id LIMIT 1")
+        result = await session.execute(sql, {"task_id": id})
+        row = result.first()   
+        if row:  
+            delete_file_from_disk(row.filename, UPLOAD_DIR)
+            # теперь удалим записи в базе данных   
+            sql: TextClause = text("DELETE FROM task_attachments WHERE task_id=:id") 
+            result = await session.execute(sql, {"id": id}) 
+        # Шлем оповещение о закрытии задачи     
+        await notify_task_closing(session, id)       
+        #  Удаляем комментарии к задаче и саму задачу
+        sql: TextClause = text("DELETE FROM comments WHERE task_id=:id") 
+        result = await session.execute(sql, {"id": id}) 
+        sql: TextClause = text("DELETE FROM tasks WHERE id=:id") 
+        result = await session.execute(sql, {"id": id}) 
+        await session.commit()
+        return {"result": "ok"}
+    except Exception as e:
+        await session.rollback()
+        logger.error(f"Error occurred while trying to delete task: {e}")    
+        return {"result": "error", "details": "An error occurred while closing the task" }    
     
 
 # Edit the task description (only for the task creator)
@@ -574,6 +637,16 @@ async def add_comment(new_comment: Comments, session: SessionDep, current_user: 
         session.add(new_comment)
         await session.commit()
         logger.success(f"User {new_comment.creator} comment successfully added to task {new_comment.task_id}")
+        sql = text( "SELECT creator, title FROM tasks WHERE id = :id AND creator <> :creator")
+        result = await session.execute(sql, {"id": new_comment.task_id, "creator": new_comment.creator})
+        row = result.first()
+        if row:
+            personal.append({
+                'to': row.creator,
+                'from': 'System',
+                'created_at': datetime.now(),
+                'messtext': f"Создан комментарий к задаче {row.title}" if settings.language == "ru" else f"A comment has been created for the task {row.title}"     
+            })                 
         return {"result": "ok"}
     except Exception as e:
         await session.rollback()

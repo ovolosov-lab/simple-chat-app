@@ -75,6 +75,18 @@ class TasksOrm(Base):
     title: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True) 
     description: Mapped[str] = mapped_column(String(4000), nullable=False) 
 
+class TaskAttachmentsOrm(Base):
+    __tablename__ = "task_attachments"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    task_id: Mapped[int] = mapped_column(ForeignKey('tasks.id', ondelete="CASCADE"), index=True)
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)     
+    origname: Mapped[str] = mapped_column(String(255), nullable=False)    
+    created_at:  Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), 
+        server_default=func.now()
+    )
+
+
 class CommentsOrm(Base):
     __tablename__ = "comments"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)      
