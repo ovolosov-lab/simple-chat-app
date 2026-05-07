@@ -1451,14 +1451,8 @@ dialog button:hover {
   background-color: #1c59ff;
 }
 
-#showPersSlg {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
 #showPersDlg div {
-  text-align: right;
+  text-align: center;
 }
 
 #showPersDlg h3 {
@@ -1467,13 +1461,7 @@ dialog button:hover {
   color: #0a0238;
 }
 
-#showPersDlg p {
-  padding: 10px 20px 10px 20px;
-  border: rgba(204, 229, 255, 0.1);
-  background-color: #fff;
-}
 
-/* На мобильных устройствах удобно, когда кнопки крупные */
 @media (max-width: 480px) {
   #personal_Dialog textarea {
     max-width: 95%;
@@ -1485,16 +1473,12 @@ dialog button:hover {
 
   dialog button {
     width: 100%;
-    /* Кнопки растягиваются на всю ширину */
     margin-left: 0 !important;
-    /* Убираем отступы сбоку */
     margin-top: 10px;
     padding: 12px;
-    /* Увеличиваем область нажатия (удобно для пальца) */
   }
 }
 
-/* Стили для затемнения фона за окном */
 dialog::backdrop {
   background-color: rgba(0, 0, 0, 0.5);
   /* Полупрозрачный черный */
@@ -1760,4 +1744,70 @@ dialog::backdrop {
     font-size: 0.8rem;
   }
 
+}
+
+#showPersDlg {
+    border: none;
+    border-radius: 16px;
+    padding: 0;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    font-family: sans-serif;
+    overflow: hidden;
+}
+
+#showPersDlg::backdrop {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px); /* Эффект матового стекла */
+}
+
+
+#showPersDlg .dialog-content {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#showPersDlg .show_pers_mess_header {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+#showPersDlg .sender-info {
+     display: block;
+    font-size: 1.4rem;
+    color: #263ffd;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    text-align: center;
+}
+
+.personal_message_text {
+    background: #f5f7fa;
+    padding: 16px;
+    border-radius: 12px;
+    margin: 8px 0;
+    line-height: 1.5;
+    color: #444;
+    text-align: left;
+}
+
+#showPersDlg .close_btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #007AFF; 
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#showPersDlg .close_btn:hover {
+    background: #0056b3;
 }

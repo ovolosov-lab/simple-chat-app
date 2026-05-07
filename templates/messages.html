@@ -137,9 +137,14 @@
     </dialog>
 
     <dialog id="showPersDlg">
-        <h3 id="show_pers_mess_header">{{show_pers_mess_header}}</h3>
-        <p id="personal_message_text"> </p>
-        <div><button id="closeSP_btn">{{closeSP_btn}}</button></div>
+        <div class="dialog-content">
+            <h3 id="show_pers_mess_header" class="show_pers_mess_header">{{show_pers_mess_header}}</h3>
+            <p class="sender-info" id="sender-info"> </p>
+            <p id="personal_message_text" class="personal_message_text"> </p>
+            <div class="actions">
+                <button id="closeSP_btn" class="close_btn">{{closeSP_btn}}</button>
+            </div>
+        </div>
     </dialog>
 
     <dialog id="deleteDlg">
@@ -672,12 +677,14 @@
 
             if (!showPersDlg.open) {
                 try {
+                    const sender_info = document.getElementById("sender-info");
                     const response = await fetch('/messages/get_personal', { credentials: 'include' });
                     const data = await response.json();
                     if (data) {
                         if (data.length > 0) {
                             data.forEach(msg => {
-                                pers_mess_header.textContent = `{{you_have_personal_message}} ${msg.from}:`;
+                                pers_mess_header.textContent = `{{you_have_personal_message}}`;
+                                sender_info.textContent = msg.from;
                                 pers_mess_text.textContent = msg.messtext;
                                 showPersDlg.showModal();
                             });
