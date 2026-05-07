@@ -267,7 +267,7 @@
         });
 
         document.getElementById("attach_file_btn").addEventListener('click', (e) => {
-            uploadDialog.dataset.url = "'/message-attachment/'";
+            uploadDialog.dataset.url = '/message-attachment/';
             uploadDialog.showModal();
             e.stopPropagation();
         })
