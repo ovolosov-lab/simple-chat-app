@@ -55,6 +55,7 @@
     "fio_confirm": "Save",
     "menu_item_read": "Read",
     "menu_item_like": "Like",
+    "menu_item_pers": "Private message", 
     "menu_item_task": "Create a Task",
     "menu_item_docs": "Important Document",
     "menu_item_delete": "Delete",

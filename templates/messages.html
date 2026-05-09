@@ -194,6 +194,7 @@
     <div id="custom-menu" class="context-menu">
         <div data-action="read" class="menu-item">{{menu_item_read}}</div>
         <div data-action="like" class="menu-item">{{menu_item_like}}</div>
+        <div data-action="pers" class="menu-item">{{menu_item_pers}}</div>
         <div data-action="task" class="menu-item">{{menu_item_task}}</div>
         <div data-action="docs" class="menu-item">{{menu_item_docs}}</div>
         <hr>
@@ -491,6 +492,7 @@
                     div.dataset.username = msg.username;
                     div.dataset.noTask = noTask;
                     div.dataset.noFiles = noFiles;
+                    div.dataset.userid = msg.userid                    
                     div.dataset.uniqJson = `{"id":${msg.id}, "username":"${msg.username}"}`;
                     div.onclick = onMessClick;
                     messagesList.appendChild(div);
@@ -551,6 +553,7 @@
                                              <span id="created_${msg.id}" class="timestamp click_me" title="{{create_task_timestamp_title3}}">${msg.created_at}</span>`;
                         }
                         div.dataset.username = msg.username;
+                        div.dataset.userid = msg.userid;
                         div.dataset.uniqJson = `{"id":${msg.id}, "username":"${msg.username}"}`;
                         div.onclick = onMessClick;
 
@@ -887,6 +890,7 @@
                             div.innerHTML = `<span class="username"><b>${msg.avatar}</b>${msg.username}</span><span id="mt_${msg.id}" class="messtext">${msg.messtext}</span><span id="created_${msg.id}" class="timestamp click_me" title="{{create_task_timestamp_title4}}">${msg.created_at}</span>`;
                         }
                         div.dataset.username = msg.username;
+                        div.dataset.userid = msg.userid
                         div.dataset.uniqJson = `{"id":${msg.id}, "username":"${msg.username}"}`;
                         read_div = document.createElement('div');
                         read_div.id = "badge_" + msg.id;
@@ -1416,6 +1420,7 @@
             const readItem = menu.querySelector('[data-action="read"]');
             const likeItem = menu.querySelector('[data-action="like"]');
             const taskItem = menu.querySelector('[data-action="task"]');
+            const persItem = menu.querySelector('[data-action="pers"]');
             const delItem = menu.querySelector('[data-action="delete"]');
             const docsItem = menu.querySelector('[data-action="docs"]');
 
@@ -1425,10 +1430,12 @@
             docsItem.classList.remove('disabled');
 
             if (mess_block.dataset.username == userName) {
+                persItem.classList.add('disabled');
                 readItem.classList.add('disabled');
                 likeItem.classList.add('disabled');
                 delItem.classList.remove('disabled');
             } else {
+                persItem.classList.remove('disabled');
                 delItem.classList.add('disabled');
             }
             if (mess_block.dataset.noTask == 1) {
@@ -1502,6 +1509,10 @@
                     deleteDlg.dataset.id = id;
                     deleteDlg.showModal();
                     break;
+                case 'pers':
+                    console.log("userid:", mess_block.dataset.userid, userName);
+                    personal_message(mess_block.dataset.userid, userName);
+                    break;    
             }
             menu.style.display = 'none';
         });
@@ -1550,13 +1561,13 @@
                 hideToast();
             }
 
-            if (task_edit_block.length > 0) {  // находимся в режиме редактирования задачи
-                if (event.key === 'Enter') {   // нажали Enter
+            if (task_edit_block.length > 0) {  // you are in editing mode
+                if (event.key === 'Enter') {   // Enter was pressed
                     scroll_switch.checked = true;
                     task_edit_block[0].classList.remove("content_editable_block");
                     task_edit_block[0].contentEditable = "false";
                     e.preventDefault();
-                    save_confirm_dialog.showModal();  // диалог подтверждения сохранения изменений
+                    save_confirm_dialog.showModal();  
                 }
             }
             e.stopPropagation();
@@ -1576,7 +1587,7 @@
             console.log("Add new document - Server response:", data);
         }
 
-        //  важный документ оказался неважным - удалить!  +  запрос на бэк-энд
+        //  erase document!  +  запрос на бэк-энд
         async function remove_document(id) {
             document.getElementById('documDelCancel').addEventListener('click', (e) => { documDelDialog.close(); e.stopPropagation(); });
             document.getElementById('documDelConfirm').addEventListener('click', async (e) => {
@@ -1585,7 +1596,7 @@
                 const data = await response.json();
                 if (data) {
                     if (data.result == "ok") {
-                        console.log("Документ удален");
+                        console.log("Document was deleted");
                         fetchDocuments();
                     }
                 }
@@ -1609,8 +1620,8 @@
 
         note_confirm.addEventListener('click', async (e) => {
             const description = document.getElementById('description');
-            console.log('Выбрано: Сохранить описание Докум.id=' + notesDlg.dataset.id);
-            const response = await fetch('/documents/add_notes', {
+            console.log('Selected: Save the document description .id=' + notesDlg.dataset.id);
+            const response = await fetchание('/documents/add_notes', {
                 method: 'POST',
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
                 credentials: 'include',
@@ -1622,7 +1633,7 @@
             const data = await response.json();
             if (data) {
                 if (data.result == "OK") {
-                    console.log(`Описание документа ${notesDlg.dataset.id} изменено`);
+                    console.log(`Document description ${notesDlg.dataset.id} was changed`);
                     fetchDocuments();
                 }
             }
@@ -1636,7 +1647,7 @@
         });
 
         fio_confirm.addEventListener('click', async (e) => {
-            console.log('Выбрано: Сохранить описание Докум.id=' + userDlg.dataset.userid);
+            console.log('Selected: Save user`s description .id=' + userDlg.dataset.userid);
             const response = await fetch('/users/fio', {
                 method: 'POST',
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -1742,6 +1753,7 @@
                 const response = await fetch('/tasks/gant', { credentials: 'include' });
                 const data = await response.json();
                 if (data) {
+                    let redPoint = 31;
                     let now = new Date();
                     startPoint = Math.max(data[0].startcol - 2, -30) 
                     console.log('startcol:', data[0].startcol, ' startPoint:', startPoint)   
@@ -1756,6 +1768,7 @@
 
                         if (now.toISOString().split('T')[0] == new Date().toISOString().split('T')[0]) {
                             div.style = "color: red;";
+                            redPoint = i + 2;
                         }
 
                         let month1 = "0" + (now.getMonth() + 1);
@@ -1773,7 +1786,9 @@
                         div.className = 'task-bar';
                         if (task.expired > 0) {
                             div.classList.add('expired_task');
-                            endCol = 31;
+                            if (endCol < redPoint) {
+                                endCol = redPoint;
+                            }    
                         }
                         div.style.gridColumn = `${startCol} / ${endCol}`;
                         div.style.gridRow = i;

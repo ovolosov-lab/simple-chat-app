@@ -106,9 +106,9 @@ async def messages(id: int, session: SessionDep, current_user: UserInfo = Depend
     result: Result[Any]
     if id <= 0:
         sql: TextClause = text("""
-           SELECT t.id, t.username, t.messtext, t.created_at, t.checked, t.likes, t.task, t.avatar 
+           SELECT t.id, t.username, t.userid, t.messtext, t.created_at, t.checked, t.likes, t.task, t.avatar 
            FROM (
-             SELECT m.id, u.username, u.avatar, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
+             SELECT m.id, u.userid, u.username, u.avatar, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
                (SELECT count(*) FROM mess_read R WHERE R.mess_id=m.id) as checked, 
                (SELECT count(*) FROM mess_likes R WHERE R.mess_id=m.id) as likes, 0 as task          
              FROM messages m INNER JOIN users u ON m.userid=u.userid 
@@ -118,7 +118,7 @@ async def messages(id: int, session: SessionDep, current_user: UserInfo = Depend
         result = await session.execute(sql, {"max_mess_count": settings.current_messages_max_count}) 
     else: 
         sql: TextClause = text(""" 
-            SELECT m.id, u.username, u.avatar, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
+            SELECT m.id, u.userid, u.username, u.avatar, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
             (SELECT count(*) FROM mess_read R WHERE R.mess_id=m.id) as checked, 
             (SELECT count(*) FROM mess_likes R WHERE R.mess_id=m.id) as likes, 0 as task                                  
             FROM messages m INNER JOIN users u ON m.userid=u.userid 
