@@ -1,5 +1,6 @@
+from models import UserInfo
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import lru_cache
 import json
 import os
@@ -13,9 +14,9 @@ import pathlib
 from fastapi import File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import TextClause, text
+from sqlalchemy import MappingResult, TextClause, delete, text
 from database import SessionDep, async_sessionmaker, check_user
-from config import settings, logger
+from config import ERROR_MESSAGES_EN, ERROR_MESSAGES_RU, settings, logger
 from models import NewUser, TasksOrm, UserOrm
 from tokens import create_access_token, get_current_user
 from sqlalchemy import select, cast, Date
@@ -167,18 +168,24 @@ def load_internationalization_data(BASE_DIR: str, language: str) -> dict:
         raise HTTPException(status_code=500, detail="Error occurred while loading internationalization data")
 
 
+def get_err_message(key: str, default: str) -> str:
+    return ERROR_MESSAGES_EN.get(key, default) if settings.language == "en" else ERROR_MESSAGES_RU.get(key, default) 
+
+
 async def how_much_messages(session: SessionDep) -> int:
     sql = text("SELECT COUNT(*) FROM messages")
     result = await session.execute(sql)
     return result.scalar() or 0
 
 
-async def notify_deadlines(session_factory: async_sessionmaker) -> None:
+async def daily_morning_task(session_factory: async_sessionmaker) -> None:
     async with session_factory() as session:
         today = datetime.now().date()
+        past_date = today - timedelta(days=settings.hold_closed_tasks_days)
+
         sql = select(TasksOrm).where(
             cast(TasksOrm.deadline, Date) == today,
-            TasksOrm.completed == 0
+            TasksOrm.status != 'closed'
         )
         result = await session.execute(sql)
         tasks = result.scalars().all()
@@ -191,6 +198,16 @@ async def notify_deadlines(session_factory: async_sessionmaker) -> None:
                 'created_at': datetime.now(),
                 'messtext': mess_text
             })
+            
+        try:
+            sql = delete(TasksOrm).where( TasksOrm.status == 'closed', TasksOrm.deadline < past_date)        
+            result = await session.execute(sql)
+            await session.commit()
+            logger.success("Deleting long-completed tasks was successful")
+        except Exception as e:
+            await session.rollback()
+            logger.error(f"An error occurred while deleting long-completed tasks: {e}")
+
 
 
 async def notify_task_closing(session: SessionDep, task_id: int) -> None:
@@ -207,8 +224,10 @@ async def notify_task_closing(session: SessionDep, task_id: int) -> None:
         })       
 
 
-async def notify_all(session: SessionDep, message: str) -> None:
+async def notify_all(session: SessionDep, message: str, exclude_user: int = 0) -> None:
     sql = select(UserOrm)
+    if exclude_user > 0:
+        sql = sql.where(UserOrm.userid != exclude_user)
     result = await session.execute(sql)
     users = result.scalars().all()
     for usr in users:
@@ -219,3 +238,22 @@ async def notify_all(session: SessionDep, message: str) -> None:
             'messtext':message
         })
 
+
+async def notify_new_comment(session: SessionDep, task_id: int, creator: int) -> None:
+    sql: TextClause = text( "SELECT t.title FROM tasks t WHERE t.task_id=:id LIMIT 1")
+    result = await session.execute(sql, {"id": task_id})
+    row = result.first()
+    if row:
+        message: str = f"Создан комментарий к задаче {row.title}" if settings.language == "ru" else f"A comment has been created for the task {row.title}"  
+        await notify_all(session, message, creator)
+
+
+#  Checking that the user has read/liked the message (adding the user to the read/liked table and returning the count of read/liked users)
+async def make_message_read_liked(session: SessionDep, message_id: int, current_user: UserInfo, tableName: str, resultOnly: bool = False):
+    if not resultOnly: 
+        sql: TextClause = text(f"INSERT INTO {tableName}(mess_id, userid) SELECT A.id, :user_id FROM messages A WHERE A.id=:id AND NOT EXISTS(SELECT B.userid FROM {tableName} B WHERE B.mess_id=:mess_id AND B.userid=:userid)") 
+        result = await session.execute(sql, {"user_id": current_user.userid, "id": message_id, "mess_id": message_id, "userid": current_user.userid}) 
+        await session.commit()
+    sql: TextClause = text(f"SELECT R.mess_id, count(*) as cnt FROM {tableName} R WHERE R.mess_id=:id GROUP BY R.mess_id")
+    result = await session.execute(sql, {"id": message_id})
+    return result.mappings().all()

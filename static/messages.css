@@ -1035,6 +1035,9 @@ body.dark-theme .sun {
   display: inline-block;
   max-width: 250px;
 }
+.title_span_closed {
+  color: rgb(64, 64, 64);
+}
 
 .respons,
 .taskButton {
@@ -1111,6 +1114,12 @@ H3 {
   padding-left: 5px;
 }
 
+#start_date {
+    width: 91%;
+    text-align: center;
+    font-size: 1.2rem;  
+    padding: 8px 16px;  
+}
 
 @media (max-width: 768px) {
   .si_active {
@@ -1130,8 +1139,13 @@ H3 {
     max-height: calc(100vh - 350px);
   }
 
-  #due_date {
+  #due_date, #start_date {
     width: 89%;
+  }
+  #start_date {
+    width: 91%;
+    text-align: center;
+    font-size: 1.2rem;    
   }
 
   .makeTaskDiv {
@@ -1225,6 +1239,14 @@ body.dark-theme .task_title {
   cursor: pointer;
 }
 
+.task_closed {
+  padding-top: 10px;
+  background-image: radial-gradient(ellipse at center,
+      rgba(255, 255, 255, 1.0) 60%,
+      rgba(204, 246, 253, 0) 90%);
+  border-radius: 20px;   
+}
+
 .content_editable_block {
   background: #fff;
   font-size: 1.0rem;
@@ -1253,6 +1275,10 @@ body.dark-theme .content_editable_block {
   line-height: 1.1rem;
   padding-left: 5px;
   padding-right: 5px;
+}
+
+.status_closed {
+  color: #d61afc !important;
 }
 
 .task_header b {
@@ -1414,8 +1440,36 @@ dialog {
   z-index: 20;
 }
 
-.expired_task {
-  background: linear-gradient(to right, rgb(58, 97, 253) 70%, #e74c3c 70%)
+.gant_expired_task {
+  background: linear-gradient(to right, rgb(58, 97, 253) 70%, #e74c3c 70%);
+}
+.gant_closed_task {
+  background: rgb(2, 73, 70);
+}
+.gant_planned_task {
+  background: rgb(166, 230, 255);
+  color: #333333;
+}
+.red {
+  background: #e74c3c;
+}
+.blue{
+ background: rgb(58, 97, 253);
+}
+.flex-between {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  font-size:0.6rem;
+}
+.flex-between div {
+  padding:15px 0 0 20px;
+}
+.flex-between span {
+  padding:0 15px 0 15px;
+}
+.flex-between b {
+  font-size:0.8rem;
 }
 
 #personal_Dialog {
@@ -1811,3 +1865,32 @@ dialog::backdrop {
 #showPersDlg .close_btn:hover {
     background: #0056b3;
 }
+
+.tasks_checkbox_div{
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  top: -21px;
+  right: 20px;
+  /* transform: translateX(-50%); */
+  color: rgba(65, 65, 65, 0.9);
+  font-size: 0.8rem;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight:normal;
+}
+.tasks_checkbox_div div{
+  padding-top: 1px;
+  padding-left: 5px;
+}
+.nonVisibled {
+  display: none;
+}
+
+@media(max-width: 768px) {
+  .tasks_checkbox_div{
+    right: 0px;
+  }
+  .tasks_checkbox_div div{
+    padding-left: 0;
+  }
+} 

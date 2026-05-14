@@ -1,15 +1,19 @@
+import enum
 from typing import Annotated
 
-from annotated_types import Gt, MaxLen, MinLen
+from annotated_types import Gt
+import bleach
 from fastapi import types
-from pydantic import AfterValidator, BaseModel, field_validator
-from sqlalchemy.orm import declarative_base
-from sqlalchemy import ForeignKey, Integer, String
+from pydantic import AfterValidator, BaseModel, BeforeValidator, Field, field_validator
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import date, datetime
 from sqlalchemy import DateTime, func
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 class UserOrm(Base):
     __tablename__ = "users"
@@ -24,7 +28,6 @@ class UserOrm(Base):
         index=True
     )  
     avatar: Mapped[str] = mapped_column(String(10), nullable=True, default='&#129489')  
-
 
 class MessageOrm(Base):
     __tablename__ = "messages"
@@ -61,6 +64,11 @@ class AttachmentsOrm(Base):
     filename: Mapped[str] = mapped_column(String(255), nullable=False)     
     origname: Mapped[str] = mapped_column(String(255), nullable=False)
 
+class TaskState(str, enum.Enum):
+    planned = "planned"
+    started = "started"
+    closed = "closed"
+
 class TasksOrm(Base):
     __tablename__ = "tasks"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -70,10 +78,14 @@ class TasksOrm(Base):
         DateTime(timezone=False), 
         server_default=func.now()
     )
+    start_date:  Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), 
+        server_default=func.now(), index=True
+    )
     deadline: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False, index=True)
-    completed: Mapped[int] = mapped_column(Integer, server_default="0")
     title: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True) 
     description: Mapped[str] = mapped_column(String(4000), nullable=False) 
+    status: Mapped[TaskState] = mapped_column(Enum(TaskState, name="task_states"), default=TaskState.started, index=True)
 
 class TaskAttachmentsOrm(Base):
     __tablename__ = "task_attachments"
@@ -85,7 +97,6 @@ class TaskAttachmentsOrm(Base):
         DateTime(timezone=False), 
         server_default=func.now()
     )
-
 
 class CommentsOrm(Base):
     __tablename__ = "comments"
@@ -110,76 +121,76 @@ class DocsOrm(Base):
         index=True
     )
 
+# --------------------------- Pydantic classes -----------------------
+
+clean_before = BeforeValidator(lambda v: bleach.clean(str(v or ''), strip=True).strip())
+clean_before_bi = BeforeValidator(lambda v: bleach.clean(str(v), tags=['b', 'i'], strip=True).strip())
+
+def validate_not_past(v: date) -> date:
+    if v < date.today():
+        raise ValueError('date_in_past')
+    return v
+
+FutureDate = Annotated[date, AfterValidator(validate_not_past)]
+
 
 class Message(BaseModel):
     userid: Annotated[int, Gt(0)]
-    messtext: Annotated[str, AfterValidator(str.strip), MinLen(1), MaxLen(2000)]
+    messtext: Annotated[str, clean_before_bi, Field(min_length=1, max_length=2000)]
 
 class User(BaseModel):
-    username: Annotated[str, AfterValidator(str.strip), MinLen(3), MaxLen(20)]   
-    password: Annotated[str, AfterValidator(str.strip), MinLen(6), MaxLen(20)]         
+    username: Annotated[str, clean_before, Field(min_length=3, max_length=20)]   
+    password: Annotated[str, AfterValidator(str.strip), Field(min_length=6, max_length=20)]         
 
 class NewUser(BaseModel):
-    username: Annotated[str, AfterValidator(str.strip), MinLen(3), MaxLen(20)]  
-    fio: Annotated[str | None, AfterValidator(lambda v: v.strip().title() if v else v), MaxLen(100)] = None   
-    secret: str  
-    password1: Annotated[str, AfterValidator(str.strip), MinLen(6), MaxLen(20)]     
-    password2: Annotated[str, AfterValidator(str.strip), MinLen(6), MaxLen(20)]     
+    username: Annotated[str, clean_before, Field(min_length=3, max_length=20)]  
+    fio: Annotated[str | None, clean_before, AfterValidator(lambda v: v.title()), Field(max_length=100)] = None   
+    secret: Annotated[str, AfterValidator(str.strip), Field(min_length=2, max_length=100)]   
+    password1: Annotated[str, AfterValidator(str.strip), Field(min_length=6, max_length=20)]     
+    password2: Annotated[str, AfterValidator(str.strip), Field(min_length=6, max_length=20)]     
     
 class UserInfo(BaseModel):
-    userid: int
-    username: str
+    userid: Annotated[int, Gt(0)]
+    username: Annotated[str, clean_before, Field(min_length=3, max_length=20)] 
 
 class MessId(BaseModel):
     id: Annotated[int, Gt(0)]
-    username: Annotated[str, MinLen(3), MaxLen(20)] 
+    username: Annotated[str, clean_before, Field(min_length=3, max_length=20)] 
 
 class Tasks(BaseModel):
     id: Annotated[int, Gt(0)]
     creator: Annotated[int, Gt(0)]
     respons: Annotated[int, Gt(0)]
-    deadline: date
-    title: Annotated[str, MinLen(3), MaxLen(255)] 
-
-    @field_validator('deadline')
-    @classmethod
-    def prevent_past_dates(cls, v: date) -> date:
-        if v < date.today():
-            raise ValueError('date_in_past')
-        return v 
+    start_date: FutureDate
+    deadline: FutureDate
+    title: Annotated[str, clean_before, Field(min_length=3, max_length=255)] 
+    status: TaskState
 
 class TaskEdit(BaseModel):
     id: Annotated[int, Gt(0)]
     userid: Annotated[int, Gt(0)]
-    messtext: Annotated[str, AfterValidator(str.strip), MinLen(11), MaxLen(2000)]
+    messtext: Annotated[str, clean_before_bi, Field(min_length=11, max_length=2000)] 
 
 class DeadlineEdit(BaseModel):
     id: Annotated[int, Gt(0)]
     userid: Annotated[int, Gt(0)]
-    deadline: date
-
-    @field_validator('deadline')
-    @classmethod
-    def prevent_past_dates(cls, v: date) -> date:
-        if v < date.today():
-            raise ValueError('date_in_past')
-        return v    
+    deadline: FutureDate
 
 class UserFio(BaseModel):
     userid: Annotated[int, Gt(0)]  
-    fio: Annotated[str, AfterValidator(lambda v: v.strip().title()), MinLen(3), MaxLen(100)]
-    avatar: Annotated[str, AfterValidator(str.strip), MinLen(3), MaxLen(10)]   
+    fio: Annotated[str, clean_before, Field(min_length=3, max_length=100)] 
+    avatar: Annotated[str, AfterValidator(str.strip), Field(pattern=r"^[0-9&#;axAF-f]+$", min_length=3, max_length=10)]   
 
 class Docs(BaseModel):
     mess_id: Annotated[int, Gt(0)]
 
 class DocsNotes(Docs):
-    notes: Annotated[str, AfterValidator(str.strip), MinLen(3), MaxLen(1000)]     
+    notes: Annotated[str, clean_before, Field(min_length=3, max_length=1000)]    
 
 class Comments(BaseModel):
     task_id: Annotated[int, Gt(0)]
     creator: Annotated[int, Gt(0)]
-    comment: Annotated[str, AfterValidator(str.strip), MinLen(1), MaxLen(2000)]        
+    comment: Annotated[str, clean_before_bi, Field(min_length=3, max_length=2000)]         
 
     
 

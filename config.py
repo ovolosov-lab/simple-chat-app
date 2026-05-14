@@ -121,6 +121,7 @@ class Settings(BaseSettings):
     language: str = "en" 
     in_development: bool = False
     force_recreate_db: bool = False   
+    hold_closed_tasks_days: int = 180
 
 
     # Указываем, откуда брать данные

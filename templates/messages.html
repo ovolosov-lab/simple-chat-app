@@ -65,9 +65,10 @@
                 <div class="spisok" id="lists_container01">
                     <div class="nice-list">
                         <span id="users-list-title" class="nice-list-title">{{users_list_title}}</span>
-                        <div class="scroll-container" id="activ_users_list"> </div>
+                        <div class="scroll-container" id="activ_users_list"> </div>                       
                     </div>
                     <div class="nice-list our-tasks">
+                        <div class="tasks_checkbox_div"><input id="show_closed_tasks_cb" type="checkbox"> <div>{{show_closed_tasks}}</div></div>                        
                         <span id="nice-list-header" class="nice-list-title">{{nice_list_header}}</span>
                         <div class="scroll-container" id="task-list"> </div>
                     </div>
@@ -99,6 +100,8 @@
             <label for="respons" class="taskLabel">{{respons_label}}</label>
             <select name="respons" id="respons" class="respons" required>
             </select>
+            <label for="start_date" class="taskLabel">{{start_date_label}}</label>
+            <input type="date" name="start_date" id="start_date" class="respons" required>
             <label for="due_date" class="taskLabel">{{due_date_label}}</label>
             <input type="date" name="due_date" id="due_date" class="respons" required>
             <input type="hidden" value="" name="task_id" id="task_id">
@@ -187,7 +190,15 @@
             <div id="GantParent" class="gant-parent">
                 <div id="Gant" class="Gant"> </div>
             </div>
-            <button id="close_diagram_btn">{{closeSP_btn}}</button>
+            <div class="flex-between">
+                <div>
+                <span><b class="gant_planned_task">&nbsp;&nbsp;</b> - запланированные</span>
+                <span><b class="blue">&nbsp;&nbsp;</b> - текущие</span> 
+                <span><b class="gant_closed_task">&nbsp;&nbsp;</b> - закрытые</span> 
+                <span><b class="red">&nbsp;&nbsp;</b> - просроченные</span>    
+                </div> 
+                <button id="close_diagram_btn">{{closeSP_btn}}</button>
+            </div>
         </div>
     </dialog>
 
@@ -249,7 +260,8 @@
         const searchInput = document.getElementById('searchInput');
         const documDelDialog = document.getElementById('documDelDialog');
         const uploadDialog = document.getElementById('file_upload_block');
-
+        const taskShowClosedDiv = document.querySelector('.tasks_checkbox_div');
+        const taskShowClosedCB = document.querySelector('#show_closed_tasks_cb');
 
         //  --------------------------------------------------------------
         // Первоначальная загрузка сообщений и обновление каждые 3 секунды
@@ -512,11 +524,11 @@
 
 
         // Функция добавления новых сообщений -  отрисовываем новые
-        function renderNewMessages(data) {
+        async function renderNewMessages(data) {
             let haveNewMessage = false;
             if (lastId > 0) {
                 if (Array.isArray(data) && data.length === 0) {
-                    fetchConditions();
+                    await fetchConditions();
                 } else {
                     const fragment = document.createDocumentFragment();
                     data.forEach(msg => {
@@ -671,7 +683,7 @@
 
                     renderAllMessages(data, welcome);
                 } else {
-                    renderNewMessages(data);
+                    await renderNewMessages(data);
                 }
             } catch (error) {
                 console.error('Messages loading error:', error);
@@ -805,6 +817,7 @@
                 const creator = document.getElementById("taskCreator").value;
                 const task_id = document.getElementById("task_id").value;
                 const resp = document.getElementById("respons").value;
+                const start_date_val = document.getElementById("start_date").value;
                 const due_date = document.getElementById("due_date").value;
                 const messtext = document.getElementById("mt_" + task_id);
                 const created = document.getElementById("ctreted_" + task_id);
@@ -825,8 +838,10 @@
                             id: task_id,
                             creator: creator,
                             respons: resp,
+                            start_date: start_date_val,                             
                             deadline: due_date,
-                            title: task_title
+                            title: task_title,
+                            status: 'planned'
                         })
                     });
                     const data = await response.json();
@@ -1066,7 +1081,8 @@
                     tasksDocsBtn.title = "{{Important_documents_title}}";
                     tasksDocsBtn.innerHTML = "&#128220;";
                     header.textContent = "{{Tasks_list_header}}";
-                    fetchTasks();
+                    taskShowClosedDiv.classList.remove("nonVisibled");
+                    await fetchTasks();
                 } else {
                     console.log("Документы");
                     tasksDocsBtn.dataset.action = 'docs';
@@ -1074,15 +1090,16 @@
                     tasksDocsBtn.innerHTML = "&#128256;";   // &#128736;&#65039;
                     document.getElementById("task-list").innerHTML = "";
                     header.textContent = "{{Important_documents_header}}";
-                    fetchDocuments();
+                    taskShowClosedDiv.classList.add("nonVisibled");
+                    await fetchDocuments();
                 }
             } else if (clickedElement.closest('#chat-header')) {         // обработка события Открыть дополнительную (оускающуюся) панель (Пользователи, Задачи, Поиск)
                 if ((!sl_pan.classList.contains("panel-opened")) && (!e.target.closest('#searchBtn'))) {
                     sl_pan.classList.add("panel-opened");
                     if (tasksDocsBtn.dataset.action == 'tasks') {
-                        fetchTasks();
+                        await fetchTasks();
                     } else {
-                       fetchDocuments(); 
+                       await fetchDocuments(); 
                     }
                 } else if ((!clickedElement.closest('#sliding-panel')) && (!notesDlg.open) && (!deadlineDialog.open) && (!save_confirm_dialog.open)) {
                     if (sl_pan.classList.contains("panel-opened")) {     //  закрыть открытую ранее дополнительную панель (sliding panel)
@@ -1098,8 +1115,13 @@
                     sl_pan.classList.remove('panel-opened');
                 } else if (clickedElement.classList.contains("timestamp")) {
                     if (clickedElement.id.includes("created_")) {              // обработка события Открыть блок добавления новой задачи
+                        const today = new Date();
+                        const yyyy = today.getFullYear();
+                        const mm = String(today.getMonth() + 1).padStart(2, '0');
+                        const dd = String(today.getDate()).padStart(2, '0');
                         scroll_switch.checked = false;
                         document.getElementById("task_id").value = clickedElement.id.replace("created_", "");
+                        document.getElementById("start_date").value = `${yyyy}-${mm}-${dd}`;
                         console.log(document.getElementById("task_id").value);
                         tasksDiv.showModal();
                     }
@@ -1118,21 +1140,24 @@
         // Отмена создания задачи - просто закрыть диалог
         function closeTaskDiv() {
             tasksDiv.close();
+            event.stopPropagation();
         }
 
         // Закрыть при подтверждении - Закрыть задачу и закрыть диалог
-        confirmButton.addEventListener('click', () => {
-            closeTaskRequest();
+        confirmButton.addEventListener('click', async (e) => {
+            await closeTaskRequest();
             dialog.close();
             task_id = 0;
             console.log("Подтверждено");
+            e.stopPropagation();
         });
 
         // Закрыть при отмене - отказаться от закрытия задачи
-        cancelButton.addEventListener('click', () => {
+        cancelButton.addEventListener('click', (e) => {
             dialog.close();
             task_id = 0;
             console.log("Отменено");
+            e.stopPropagation();
         });
 
 
@@ -1168,39 +1193,52 @@
                 }
                 const div = document.createElement('div');
 
+                let tmpHtml = '';
                 let dTitle = "";
                 let tmp0 = "";
-                if (task.creator == userName) {
-                    tmp0 = `<button class="close-task margin-right-10" onclick="closeTask(${task.id})" title="{{closeTaskButton}}">&#10060;</button>`;
-                    dTitle = "You can change it";
-                } else {
+                if (task.status != 'closed') {
+                    if (task.creator == userName) {
+                        tmp0 = `<button class="close-task margin-right-10" onclick="closeTask(${task.id})" title="{{closeTaskButton}}">&#10060;</button>`;
+                        dTitle = "You can change it";
+                    } else {
                     tmp0 = `<button class="close-task disabled margin-right-10" title="{{closeTaskButton}}">&#10060;</button>`;
-                }
+                    } 
 
-                let tmpHtml = `<span class="task_header">{{task_created_at}}: <b>${task.created_at}</b> <div class="task_title"><span class="task_title_span">${task.title}</span></div></span>
+                    tmpHtml = `<span class="task_header">{{task_created_at}}: <b>${task.created_at}</b> <div class="task_title"><span class="task_title_span">${task.title}</span></div></span>
                        <span class="task_header">{{task_owner}}: <b>${task.creator}</b></span>
+                       <span class="task_header">{{start_date_label}}: <b>${task.start_date}</b></span>
                        <span class="task_header"><span id="deadline_${task.id}" onclick="edit_deadline(${task.id}, '${task.deadline}', '${task.creator}')" class="deadline" title='${dTitle}'>{{task_deadline}}: <b>${task.deadline}</b></span>
                         ${tmp0} <button class="close-task" id="task_att_${task.id}" onclick="task_attachment_add(${task.id})">&#128450;&#65039;</button></span>
                        <span class="task_header">{{task_performer}}: <b>${task.respons}</b></span>
+                       <span class="task_header">{{task_status}}: <b>${task.status}</b></span>
                        <hr class="task_header_line"/>
                        <div id="z_${task.id}" class="task_text${task_expired}" onclick="edit_task(${task.id}, '${task.creator}')" onfocusout="finish_task_edit(this)"  contenteditable="false">${task.description}</div>
                        <div id="z_add_comment_${task.id}" class="comment"></div><div class="details-wrapper" id="wrapper_${task.id}">
                        <details id="comdet_${task.id}" ontoggle="commentDetailsToggle(${task.id});"><summary class="comments_header">{{task_comments}}:</summary>`;
-                if (task.comments.length > 0) {
-                    task.comments.forEach(comm => {
-                        tmpHtml += `<div class="one_comment content"><div class="comment_username">${comm.username}:</div><div class="comment_text">${comm.comment}</div>
+                    if (task.comments.length > 0) {
+                        task.comments.forEach(comm => {
+                            tmpHtml += `<div class="one_comment content"><div class="comment_username">${comm.username}:</div><div class="comment_text">${comm.comment}</div>
                                 <div class="comment_timestamp">${comm.created_at}</div></div>`;
-                    });
-                }
+                        });
+                    }
 
-                tmpHtml += `</details><details id="filesdet_${task.id}" ontoggle="filesDetailsToggle(${task.id});" class="task-attachments-details"><summary class="attachments_header">{{task_attachments}}:</summary>`;
-                if (task.attac.length > 0) {
-                    task.attac.forEach(fatt => {
-                        tmpHtml += `<div id="task_attac_file_${fatt.att_id}" class="content-attac" onclick="window.location='/tasks/download-file/${fatt.att_id}'">${fatt.filename}</div>`;
-                    });
-                }
+                    tmpHtml += `</details><details id="filesdet_${task.id}" ontoggle="filesDetailsToggle(${task.id});" class="task-attachments-details"><summary class="attachments_header">{{task_attachments}}:</summary>`;
+                    if (task.attac.length > 0) {
+                        task.attac.forEach(fatt => {
+                            tmpHtml += `<div id="task_attac_file_${fatt.att_id}" class="content-attac" onclick="window.location='/tasks/download-file/${fatt.att_id}'">${fatt.filename}</div>`;
+                        });
+                    }
 
-                tmpHtml += `</details> </div><div class="add_comments" onclick="add_comment(${task.id})">{{task_add_comment}}</div><hr class="task_line"/>`;
+                    tmpHtml += `</details> </div><div class="add_comments" onclick="add_comment(${task.id})">{{task_add_comment}}</div><hr class="task_line"/>`;
+                } else {
+                    tmpHtml = `<div class="task_closed"><span class="task_header">{{task_created_at}}: <b>${task.created_at}</b> <div class="task_title"><span class="title_span_closed">${task.title}</span></div></span>
+                       <span class="task_header">{{task_owner}}: <b>${task.creator}</b></span>
+                       <span class="task_header"><span id="closed_deadline_${task.id}" class="deadline">{{task_deadline}}: <b>${task.deadline}</b></span></span>
+                       <span class="task_header">{{task_performer}}: <b>${task.respons}</b></span>
+                       <span class="task_header">{{task_status}}: <b class="status_closed">${task.status}</b></span>
+                       <hr class="task_header_line"/>
+                       <div id="closed_z_${task.id}" class="task_text" contenteditable="false">${task.description}</div></div><hr class="task_line"/>`;
+                }
 
                 div.innerHTML = tmpHtml;
                 div.classList.add("task_card");
@@ -1327,7 +1365,9 @@
         // Запросить задачи на бэк-энде
         async function fetchTasks() {
             try {
-                const response = await fetch('/tasks/get_tasks', { credentials: 'include' });
+                let show_closed = 0;
+                if (taskShowClosedCB.checked) { show_closed = 1; }
+                const response = await fetch('/tasks/get_tasks/'+show_closed, { credentials: 'include' });
                 const data = await response.json();
                 if (data) {
                     renderAllTasks(data);
@@ -1337,6 +1377,8 @@
                 tasksDiv.classList.remove("taskDiv_opened");
             }
         }
+
+        taskShowClosedCB.addEventListener('change', async (e) => { await fetchTasks(); });    
 
 
         // Запросить важные документы на бэк-энде
@@ -1385,7 +1427,7 @@
                 const data = await response.json();
                 if (data) {
                     if (data.result == "ok") {
-                        fetchTasks();
+                        await fetchTasks();
                     }
                 }
             } catch (error) {
@@ -1497,8 +1539,13 @@
                     like_click(id, mess_block.dataset.username)
                     break;
                 case 'task':
+                    const today = new Date();
+                    const yyyy = today.getFullYear();
+                    const mm = String(today.getMonth() + 1).padStart(2, '0');
+                    const dd = String(today.getDate()).padStart(2, '0');
                     scroll_switch.checked = false;
                     document.getElementById("task_id").value = id;
+                    document.getElementById("start_date").value = `${yyyy}-${mm}-${dd}`;
                     tasksDiv.showModal();
                     break;
                 case 'docs':
@@ -1526,7 +1573,7 @@
             if (data) {
                 if (data.result == "ok") {
                     lastId = 0;
-                    fetchMessages();
+                    await fetchMessages();
                 } else {
                     showToast(data.details);
                 }
@@ -1536,9 +1583,10 @@
         });
 
         // Закрыть при отмене - отказаться от удаления и закрыть диалог
-        del_cancel.addEventListener('click', () => {
+        del_cancel.addEventListener('click', (e) => {
             deleteDlg.close();
             console.log("Удаление Отменено");
+            e.stopPropagation();
         });
 
         //
@@ -1589,22 +1637,29 @@
 
         //  erase document!  +  запрос на бэк-энд
         async function remove_document(id) {
-            document.getElementById('documDelCancel').addEventListener('click', (e) => { documDelDialog.close(); e.stopPropagation(); });
-            document.getElementById('documDelConfirm').addEventListener('click', async (e) => {
-                documDelDialog.close(); 
-                const response = await fetch("/documents/delete/" + id, { method: "DELETE", credentials: 'include' });
-                const data = await response.json();
-                if (data) {
-                    if (data.result == "ok") {
-                        console.log("Document was deleted");
-                        fetchDocuments();
-                    }
-                }
-                e.stopPropagation();
-            });    
+            document.getElementById('documDelConfirm').dataset.id = id;
             event.stopPropagation();
             documDelDialog.showModal();
         }
+
+        document.getElementById('documDelCancel').addEventListener('click', (e) => { documDelDialog.close(); e.stopPropagation(); }); 
+
+        document.getElementById('documDelConfirm').addEventListener('click', async (e) => {
+            let id = document.getElementById('documDelConfirm').dataset.id;
+            documDelDialog.close(); 
+            const response = await fetch("/documents/delete/" + id, { method: "DELETE", credentials: 'include' });
+            const data = await response.json();
+            if (data) {
+                if (data.result == "ok") {
+                    console.log("Document was deleted");
+                    await fetchDocuments();
+                } else {
+                    console.log(data);
+                }
+            }
+            e.stopPropagation();
+        });   
+
 
         function show_notes_dialog(id, note) {
             const description = document.getElementById('description');
@@ -1621,7 +1676,7 @@
         note_confirm.addEventListener('click', async (e) => {
             const description = document.getElementById('description');
             console.log('Selected: Save the document description .id=' + notesDlg.dataset.id);
-            const response = await fetchание('/documents/add_notes', {
+            const response = await fetch('/documents/add_notes', {
                 method: 'POST',
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
                 credentials: 'include',
@@ -1634,7 +1689,7 @@
             if (data) {
                 if (data.result == "OK") {
                     console.log(`Document description ${notesDlg.dataset.id} was changed`);
-                    fetchDocuments();
+                    await fetchDocuments();
                 }
             }
             notesDlg.close();
@@ -1662,7 +1717,7 @@
             if (data) {
                 if (data.result == "OK") {
                     console.log(`Users fullname / avatar ${userName} were changed`);
-                    fetchActivUsers();
+                    await fetchActivUsers();
                 }
             }
             userDlg.close();
@@ -1708,33 +1763,39 @@
                 const parent = document.getElementById("z_add_comment_" + task_id);
 
                 let html_str = `<textarea id="comment_input" name="comment_input" class="comment_input" maxlength="1000" rows="5" cols="40" placeholder="{{task_input_comment_placeholder}}"></textarea>
-                            <button class="comment-button" id="save_comment_${task_id}">{{save_task_comment_btn}}</button> <button class="comment-button" onclick="cancel_comment(${task_id})">{{comment_cancel_btn}}</button> `;
+                            <button class="comment-button" id="save_comment_${task_id}" onclick="save_task_comment_btn_clicked(${task_id})">{{save_task_comment_btn}}</button> <button class="comment-button" onclick="cancel_comment(${task_id})">{{comment_cancel_btn}}</button> `;
                 parent.innerHTML = html_str;
                 add_comments.forEach(elem => { elem.classList.add("hide") });
-
-                document.querySelector('#save_comment_' + task_id).addEventListener('click', async (e) => {
-                    console.log('Сохранить комментарий к задаче id=' + task_id);
-                    let comment_text = document.getElementById('comment_input').value;
-                    const response = await fetch('/comments/add', {
-                        method: 'POST',
-                        headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                        credentials: 'include',
-                        body: JSON.stringify({
-                            task_id: task_id,
-                            creator: parseInt('{{userid}}'),
-                            comment: comment_text
-                        })
-                    });
-                    const data = await response.json();
-                    if (data) {
-                        if (data.result == "ok") {
-                            fetchTasks();
-                        }
-                    }
-                    add_comments.forEach(elem => { elem.classList.remove("hide") });
-                    parent.innerHTML = "";
-                });
+                // document.querySelector('#save_comment_' + task_id).dataset.id = task_id;
             }
+        }
+
+        async function save_task_comment_btn_clicked(id) {
+            const parent = document.getElementById("z_add_comment_" + id);
+            const add_comments = document.querySelectorAll('.add_comments');
+            console.log('Сохранить комментарий к задаче id=' + id);
+            let comment_text = document.getElementById('comment_input').value;
+            const response = await fetch('/comments/add', {
+                method: 'POST',
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                credentials: 'include',
+                body: JSON.stringify({
+                    task_id: id,
+                    creator: parseInt('{{userid}}'),
+                    comment: comment_text
+                })
+            });
+            const data = await response.json();
+            if (data) {
+                if (data.result == "ok") {
+                    await fetchTasks();
+                } else {
+                    console.log(data);
+                }
+            }
+            add_comments.forEach(elem => { elem.classList.remove("hide") });
+            parent.innerHTML = "";
+            event.stopPropagation();
         }
 
         function cancel_comment(id) {
@@ -1744,13 +1805,15 @@
             event.stopPropagation();
         }
 
-        async function showDiagram() {       
+        async function showDiagram() {     
+            let show_closed = 0;
+            if (taskShowClosedCB.checked) { show_closed = 1; }              
             const gant = document.getElementById('Gant');
             gant.innerHTML = '';
 
             try {
                 let i = 2;
-                const response = await fetch('/tasks/gant', { credentials: 'include' });
+                const response = await fetch('/tasks/gant/'+show_closed, { credentials: 'include' });
                 const data = await response.json();
                 if (data) {
                     let redPoint = 31;
@@ -1784,19 +1847,27 @@
                         let startCol = Math.max(task.startcol - startPoint, 1);
                         let endCol = Math.min(task.endcol - startPoint + 1, 31 - startPoint);
                         div.className = 'task-bar';
-                        if (task.expired > 0) {
-                            div.classList.add('expired_task');
+
+                        if (task.status == 'planned') {
+                            div.classList.add('gant_planned_task');
+                        } else if (task.status == 'closed') {
+                            div.classList.add('gant_closed_task');
+                        } else if (task.expired > 0) {
+                            div.classList.add('gant_expired_task');
                             if (endCol < redPoint) {
                                 endCol = redPoint;
                             }    
                         }
+
                         div.style.gridColumn = `${startCol} / ${endCol}`;
                         div.style.gridRow = i;
                         div.title = `📌${task.title}\n📅{{deadline}}: ${task.deadline}\n👤{{executor}}: ${task.executor}`;
-                        i++;
                         div.innerText = task.title + ` (${task.executor})`;
+
                         gant.appendChild(div);
+
                         console.log('start_col=', startCol, 'end_col=', endCol);
+                        i++;
                     });
                 }
             } catch (error) {
@@ -1805,49 +1876,53 @@
             diagramDlg.showModal();
         }
 
-        document.getElementById('close_diagram_btn').addEventListener('click', () => { diagramDlg.close(); });
+        document.getElementById('close_diagram_btn').addEventListener('click', (e) => { diagramDlg.close(); e.stopPropagation(); });
 
 
         // Edit Task Deadline in dialog
         function edit_deadline(task_id, dDate, creator) {
             if (creator == '{{username}}') {
                 event.preventDefault();
-                const dEdit = document.getElementById('edit_deadline');
-                dEdit.value = dDate.substring(6, 10) + '-' + dDate.substring(3, 5) + '-' + dDate.substring(0, 2);
+                document.getElementById('edit_deadline').value = dDate.substring(6, 10) + '-' + dDate.substring(3, 5) + '-' + dDate.substring(0, 2);
                 deadlineDialog.dataset.id = task_id;
-                document.getElementById('deadline_cancel').addEventListener('click', (e) => { deadlineDialog.close(); e.stopPropagation(); });
-                document.getElementById('deadline_confirm').addEventListener('click', async (e) => {
-                    let new_data = dEdit.value;
-                    try {
-                        const response = await fetch('/tasks/deadline/edit', {
-                            method: "POST",
-                            headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                            credentials: 'include',
-                            body: JSON.stringify({
-                                id: parseInt(task_id),
-                                userid: parseInt('{{userid}}'),
-                                deadline: dEdit.value
-                            })
-                        });
-                        const data = await response.json();
-                        if (data) {
-                            if (data.result == "error") {
-                                showToast(data.details);
-                            } else {
-                                document.getElementById('deadline_' + task_id).innerHTML = "{{task_deadline}}: <b style='color:#128256'>" + new_data + "</b>";
-                            }  
-
-                            console.log(`Task id=${task_id} deadline edited - Server response:`, data);
-                        }
-                    } catch (error) {
-                        console.error('Task deadline editing error:', error);
-                    }
-                    e.stopPropagation();
-                    deadlineDialog.close();
-                });
                 deadlineDialog.showModal();
             }
         }
+
+        document.getElementById('deadline_cancel').addEventListener('click', (e) => { deadlineDialog.close(); e.stopPropagation(); });
+
+        document.getElementById('deadline_confirm').addEventListener('click', async (e) => {
+            let new_data = document.getElementById('edit_deadline').value;
+            try {
+                let id = deadlineDialog.dataset.id;
+                const response = await fetch('/tasks/deadline/edit', {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        id: parseInt(id),
+                        userid: parseInt('{{userid}}'),
+                        deadline: new_data
+                    })
+                });
+                const data = await response.json();
+                if (data) {
+                    if (data.result == "error") {
+                        showToast(data.details);
+                    } else {
+                        let ddmmyy = new_data.split('-');
+                        document.getElementById('deadline_' + id).innerHTML = "{{task_deadline}}: <b style='color:#128256'>" + ddmmyy[2]+'.'+ddmmyy[1]+'.'+ddmmyy[0] + "</b>";
+                    }  
+
+                    console.log(`Task id=${task_id} deadline edited - Server response:`, data);
+                }
+            } catch (error) {
+                console.error('Task deadline editing error:', error);
+            }
+            e.stopPropagation();
+            deadlineDialog.close();
+        });
+
 
         function showToast(txt) {
             const toast = document.getElementById("toast");

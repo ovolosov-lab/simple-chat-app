@@ -101,5 +101,8 @@
     "deadline_header": "Изменить срок исполнения",
     "DocumDelete_question": "Удалить документ ?", 
     "user_name_title": "Кликни, чтобы изменить ФИО и аватар",
-    "task_attachments": "Прикрепленные файлы" 
+    "task_attachments": "Прикрепленные файлы",
+    "show_closed_tasks": "показывать закрытые задачи", 
+    "task_status": "Состояние",
+    "start_date_label": "Начальная дата" 
 }   

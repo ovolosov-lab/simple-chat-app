@@ -1,9 +1,9 @@
 import asyncio
 
 from fastapi import Depends
-from sqlalchemy import URL, text
+from sqlalchemy import URL, Result, TextClause, text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from typing import Annotated
+from typing import Annotated, TypeVar, Any
 from crpass import verify_password
 from models import Base
 from config import settings, logger
@@ -80,3 +80,51 @@ async def create_all_tables():
         await conn.run_sync(Base.metadata.create_all)
         logger.success("Database tables were created successfully")        
         
+
+
+async def db_add_record(session: AsyncSession, model_instance: Base, log_label: str = "Record") -> dict:
+    try:
+        session.add(model_instance)
+        await session.commit()
+        logger.success(f"{log_label} successfully added")
+        return {"result": "ok"}
+    except Exception as e:
+        await session.rollback()
+        logger.error(f"Error occurred while trying to add {log_label.lower()}: {e}")
+        return {"result": "error"}
+    
+
+async def get_massages_from_db(id: int, session: AsyncSession, history: bool = False):   
+    result: Result[Any]
+    if history == 1:
+        sql: TextClause = text("""
+            SELECT m.id, u.username, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
+            (SELECT count(*) FROM mess_read R WHERE R.mess_id=m.id) as checked, u.avatar  
+            FROM messages m INNER JOIN users u ON m.userid=u.userid 
+            WHERE m.id < :mess_id  
+            ORDER BY m.id DESC LIMIT :max_mess_count 
+        """) 
+        result = await session.execute(sql, {"mess_id": id, "max_mess_count": settings.current_messages_max_count}) 
+    elif id <= 0:
+        sql: TextClause = text("""
+           SELECT t.id, t.username, t.userid, t.messtext, t.created_at, t.checked, t.likes, t.task, t.avatar 
+           FROM (
+             SELECT m.id, u.userid, u.username, u.avatar, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
+               (SELECT count(*) FROM mess_read R WHERE R.mess_id=m.id) as checked, 
+               (SELECT count(*) FROM mess_likes R WHERE R.mess_id=m.id) as likes, 0 as task          
+             FROM messages m INNER JOIN users u ON m.userid=u.userid 
+             ORDER BY m.id DESC LIMIT :max_mess_count 
+           ) t ORDER BY t.id
+        """) 
+        result = await session.execute(sql, {"max_mess_count": settings.current_messages_max_count}) 
+    else: 
+        sql: TextClause = text(""" 
+            SELECT m.id, u.userid, u.username, u.avatar, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
+            (SELECT count(*) FROM mess_read R WHERE R.mess_id=m.id) as checked, 
+            (SELECT count(*) FROM mess_likes R WHERE R.mess_id=m.id) as likes, 0 as task                                  
+            FROM messages m INNER JOIN users u ON m.userid=u.userid 
+            WHERE m.id > :mess_id       
+            ORDER BY m.id
+        """)    
+        result = await session.execute(sql, {"mess_id": id}) 
+    return result.mappings().all()

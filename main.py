@@ -1,24 +1,26 @@
+from sqlalchemy import Select
+from sqlalchemy.sql import func
+from sqlalchemy import select
+from services import daily_morning_task, make_message_read_liked
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import date, datetime
 import os
 from typing import Annotated, Any
-import bleach
+import uvicorn
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import Result, Select, TextClause, select, text
-import uvicorn
-from fastapi import Cookie, FastAPI, File, Form, Depends, HTTPException, Header, Request, UploadFile
-from database import db_connection_check, engine, SessionDep, check_user, create_all_tables, user_exists, new_session
-from models import Base, Comments, CommentsOrm, DeadlineEdit, DocsNotes, MessId, Message, MessageOrm, NewUser, TaskAttachmentsOrm, TaskEdit, Tasks, TasksOrm, User, UserFio, UserInfo, UserOrm, Docs, DocsOrm 
-from sheduler import AsyncPeriodicTask, AsyncDailyTask
-from tokens import create_access_token, get_current_user 
+from sqlalchemy import Result, TextClause, text
+from fastapi import Cookie, FastAPI, File, Form, Depends, HTTPException, Request, UploadFile
 from sqlalchemy.exc import IntegrityError
 from fastapi.middleware.cors import CORSMiddleware
+from database import db_add_record, db_connection_check, engine, SessionDep, check_user, create_all_tables, get_massages_from_db, user_exists, new_session
+from models import AttachmentsOrm, Comments, CommentsOrm, DeadlineEdit, DocsNotes, MessId, Message, MessageOrm, NewUser, TaskAttachmentsOrm, TaskEdit, TaskState, Tasks, TasksOrm, User, UserFio, UserInfo, Docs, DocsOrm 
+from sheduler import AsyncPeriodicTask, AsyncDailyTask
+from tokens import create_access_token, get_current_user 
 from config import settings, logger, ERROR_MESSAGES_EN, ERROR_MESSAGES_RU
-from services import ProtectedStaticFiles, create_new_user, delete_file_from_disk, load_internationalization_data, background_checks, makeFileResponse, no_have_such_message, get_personal_messages, notify_all, notify_task_closing, personal, save_user_file_to_disk, how_much_messages, notify_deadlines
-
+from services import ProtectedStaticFiles, create_new_user, delete_file_from_disk, get_err_message, load_internationalization_data, background_checks, makeFileResponse, no_have_such_message, get_personal_messages, notify_all, notify_new_comment, notify_task_closing, personal, save_user_file_to_disk, how_much_messages
 
 BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR: str = os.path.join(BASE_DIR, "uploads")
@@ -38,7 +40,7 @@ async def lifespan(app: FastAPI):
     periodic_task = AsyncPeriodicTask(interval=settings.users_activity_check_interval, task_func=lambda: background_checks(new_session))
     periodic_task.start()
     # Daily task for notifying about deadlines (every day at 8:00 AM)
-    daily_task = AsyncDailyTask(target_hour=8, target_minute=0, task_func=lambda: notify_deadlines(new_session))
+    daily_task = AsyncDailyTask(target_hour=8, target_minute=0, task_func=lambda: daily_morning_task(new_session))
     daily_task.start()
 
     yield
@@ -103,46 +105,14 @@ async def messages_page(session: SessionDep, request: Request, current_user: Use
 # Get all messages with their authors and info about how many users read and liked each message
 @app.get("/messages/get_messages/{id}", tags=["Communicator", "get messages"], summary="Get all the messages")
 async def messages(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    result: Result[Any]
-    if id <= 0:
-        sql: TextClause = text("""
-           SELECT t.id, t.username, t.userid, t.messtext, t.created_at, t.checked, t.likes, t.task, t.avatar 
-           FROM (
-             SELECT m.id, u.userid, u.username, u.avatar, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
-               (SELECT count(*) FROM mess_read R WHERE R.mess_id=m.id) as checked, 
-               (SELECT count(*) FROM mess_likes R WHERE R.mess_id=m.id) as likes, 0 as task          
-             FROM messages m INNER JOIN users u ON m.userid=u.userid 
-             ORDER BY m.id DESC LIMIT :max_mess_count 
-           ) t ORDER BY t.id
-        """) 
-        result = await session.execute(sql, {"max_mess_count": settings.current_messages_max_count}) 
-    else: 
-        sql: TextClause = text(""" 
-            SELECT m.id, u.userid, u.username, u.avatar, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
-            (SELECT count(*) FROM mess_read R WHERE R.mess_id=m.id) as checked, 
-            (SELECT count(*) FROM mess_likes R WHERE R.mess_id=m.id) as likes, 0 as task                                  
-            FROM messages m INNER JOIN users u ON m.userid=u.userid 
-            WHERE m.id > :mess_id       
-            ORDER BY m.id
-        """)    
-        result = await session.execute(sql, {"mess_id": id}) 
-    return result.mappings().all()
+    return await get_massages_from_db(id, session, history=False)
 
 
 # Add a new message to the messages list
 @app.post("/messages/add",  tags=["Communicator", "new message"], summary="Add a new message")
 async def add_message(new_message: Message, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
-        clean_text: str = bleach.clean(new_message.messtext, tags=['b', 'i'], strip=True)
-        try:
-            messageOrm: MessageOrm = MessageOrm(userid=new_message.userid, messtext=clean_text, checked=0)
-            session.add(messageOrm)
-            await session.commit()
-            logger.success(f"User message {new_message.userid} successfully added")
-            return {"result": "ok"}
-        except Exception as e:
-            await session.rollback()
-            logger.error(f"Error occurred while trying to add message: {e}")    
-            return {"result": "error"}       
+    message_orm = MessageOrm(**new_message.model_dump(), checked=0)
+    return await db_add_record(session, message_orm, log_label=f"new message from user id={new_message.userid}")        
 
 
 # Create a new user with the registration form data, checking the password confirmation and the uniqueness of the username, 
@@ -152,18 +122,18 @@ async def add_user(new_user: Annotated[NewUser, Form()], session: SessionDep) ->
     if (new_user.password1 == new_user.password2):
         if (await user_exists(new_user.username, session)):
             response = RedirectResponse(url="/", status_code=303)
-            response.set_cookie(key="flash_msg", value=ERROR_MESSAGES_EN.get("username_taken","This name was already taken") if settings.language == "en" else ERROR_MESSAGES_RU.get("username_taken","это имя уже занято"), httponly=True)
+            response.set_cookie(key="flash_msg", value=get_err_message("username_taken","This name was already taken"), httponly=True)
             return response
         else:
             if new_user.secret == settings.friend_reference:  
                 return await create_new_user(new_user, session)
             else:  # введенное секретное слово не совпадает с правильным из настроек 
                 response = RedirectResponse(url="/", status_code=303)
-                response.set_cookie(key="flash_msg", value=ERROR_MESSAGES_EN.get("secret_word","Wrong secret word") if settings.language == "en" else ERROR_MESSAGES_RU.get("secret_word","Секретное слово неверное"), httponly=True)
+                response.set_cookie(key="flash_msg", value=get_err_message("secret_word","Секретное слово неверное"), httponly=True)
                 return response
     else:
         response = RedirectResponse(url="/", status_code=303)
-        response.set_cookie(key="flash_msg", value=ERROR_MESSAGES_EN.get("password_mismatch","Passwords mismatch") if settings.language == "en" else ERROR_MESSAGES_RU.get("password_mismatch","Пароли не совпадают"), httponly=True)
+        response.set_cookie(key="flash_msg", value=get_err_message("password_mismatch","Пароли не совпадают"), httponly=True)
         return response
 
 
@@ -179,42 +149,22 @@ async def user_auth(user: Annotated[User, Form()], session: SessionDep) -> Redir
         return response
     else:
         response = RedirectResponse(url="/", status_code=303)
-        response.set_cookie(key="flash_msg", value=ERROR_MESSAGES_EN.get("authorization_error","authorization error") if settings.language == "en" else ERROR_MESSAGES_RU.get("authorization_error","пользователь не авторизован"), httponly=True)
+        response.set_cookie(key="flash_msg", value=get_err_message("authorization_error","authorization error"), httponly=True)
         return response
 
 
-#   отмечаем сообщение прочитанным
+#  mark the message read
 @app.post("/messages/check_read", tags=["Communicator", "messages", "check_read"], summary="mark the message have been read")
 async def message_check_read(mess_read: MessId, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql: TextClause = text("""
-            INSERT INTO mess_read(mess_id, userid) 
-            SELECT A.id, :user_id FROM messages A WHERE A.id=:id AND 
-            NOT EXISTS(SELECT B.userid FROM mess_read B WHERE B.mess_id=:mess_id AND B.userid=:userid) 
-            """) 
-    result = await session.execute(sql, {"user_id": current_user.userid, "id": mess_read.id, "mess_id": mess_read.id, "userid": current_user.userid}) 
-    await session.commit()
-    sql: TextClause = text("SELECT R.mess_id, count(*) as cnt FROM mess_read R WHERE R.mess_id=:id GROUP BY R.mess_id")
-    result = await session.execute(sql, {"id": mess_read.id})
-    dres = result.mappings().all()
-    return dres
+    resultOnly: bool = (mess_read.username == current_user.username) # True if user tries to mark his own message as read
+    return await make_message_read_liked(session, mess_read.id, current_user, "mess_read", resultOnly)
 
 
-# ставим сообщению лайк
+# like
 @app.post("/messages/like", tags=["Communicator", "likes"], summary="get likes for the message")
 async def message_like(like: MessId, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    if (like.username != current_user.username):  # нельзя лайкать свои сообщения
-        sql: TextClause = text("""
-                INSERT INTO mess_likes(mess_id, userid) 
-                SELECT A.id, :user_id FROM messages A WHERE A.id=:id AND 
-                NOT EXISTS(SELECT B.userid FROM mess_likes B WHERE B.mess_id=:mess_id AND B.userid=:userid) 
-               """) 
-        result = await session.execute(sql, {"user_id": current_user.userid, "id": like.id, "mess_id": like.id, "userid": current_user.userid}) 
-        await session.commit()
-
-    sql: TextClause = text("SELECT R.mess_id, count(*) as cnt FROM mess_likes R WHERE R.mess_id=:id GROUP BY R.mess_id")
-    result = await session.execute(sql, {"id": like.id})
-    dres = result.mappings().all()
-    return dres
+    resultOnly: bool = (like.username == current_user.username) # True if user tries to like his own message
+    return await make_message_read_liked(session, like.id, current_user, "mess_likes", resultOnly)
 
 
 # Get the list of all users with their activity status (active/inactive) and fio for the personal messages page
@@ -228,13 +178,10 @@ async def get_users_activity(session: SessionDep, current_user: UserInfo = Depen
 # Get the first message id in the database to set the starting point for loading messages on the client side
 @app.get("/messages/first_id", tags=["Communicator", "messages", "first id"], summary="the first message id")
 async def first_id(session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
-    sql: TextClause = text("SELECT MIN(m.id) as id FROM messages m") 
-    result = await session.execute(sql) 
-    row = result.first()
-    if row:
-        return {"first_id": row.id}   
-    else:
-        return {"first_id": 1}
+    query = select(func.min(MessageOrm.id))
+    result = await session.execute(query)
+    first_id_value: int | None = result.scalar_one_or_none()
+    return {"first_id": first_id_value or 1}
 
 
 # Upload the attachment file and add the message with the file link to the messages list
@@ -244,8 +191,7 @@ async def upload_file(session: SessionDep, file: UploadFile = File(...), current
     
     #  Writing file info to the database and linking it to the message   
     if result['error'] == 'OK':
-        extension:str = result["ext"]
-        extension:str = extension.lower()
+        extension:str = str(result["ext"]).lower()
         shortFileName:str = result["orig_filename"]
     
         if ((extension == ".png") or (extension == ".jpg") or (extension == ".jpeg")):
@@ -253,14 +199,12 @@ async def upload_file(session: SessionDep, file: UploadFile = File(...), current
         else:    
             if len(shortFileName) > 30:
                 shortFileName = shortFileName[:22] + '... ' + extension
-            shortFileName = "&#128206; " + shortFileName + " &#128206;"    
-            # mess_text = f"&#128206; <a href='/download-attachment/{unique_filename}'>{origFileName}</a> &#128206;"    
+            shortFileName = "&#128206; " + shortFileName + " &#128206;"       
         new_messageOrm: MessageOrm = MessageOrm(userid=current_user.userid, messtext=shortFileName, checked=0)
         session.add(new_messageOrm)    
         await session.flush() 
-        sql: TextClause = text("INSERT INTO attachments(mess_id, filename, origname) VALUES(:mess_id, :filename, :origname)") 
-        await session.execute(sql, {"mess_id": new_messageOrm.id, "filename": result["unique_filename"], "origname": result["orig_filename"]}) 
-        await session.commit()  
+        attachmentObj: AttachmentsOrm = AttachmentsOrm(mess_id=new_messageOrm.id, filename=result["unique_filename"], origname=result["orig_filename"])
+        await db_add_record(session, attachmentObj, "new attachment")
         logger.success(f"File {file.filename} successfully uploaded")
         return {"filename": file.filename, "status": "saved"}
     else: 
@@ -281,8 +225,7 @@ async def upload_task_attachment(task_id: int, session: SessionDep, file: Upload
             shortFileName = shortFileName[:32] + '... ' + extension
             
         new_attachment: TaskAttachmentsOrm = TaskAttachmentsOrm(task_id=task_id, filename=result["unique_filename"], origname=shortFileName)
-        session.add(new_attachment)    
-        await session.commit()  
+        await db_add_record(session, new_attachment, f"new attachment file for task id={task_id} ")
         logger.success(f"File {file.filename} successfully uploaded")
         return {"filename": file.filename, "status": "saved"}
     else: 
@@ -298,14 +241,14 @@ async def download_file(session: SessionDep, id: int, current_user: UserInfo = D
     if row:
         file_path: str = os.path.join(UPLOAD_DIR, row.filename)   
         if not os.path.exists(file_path):
-            return {"error": ERROR_MESSAGES_EN.get("file_not_found","File not found") if settings.language == "en" else ERROR_MESSAGES_RU.get("file_not_found","Файл не найден")}
+            return {"error": get_err_message("file_not_found","File not found")}
         return FileResponse(
             path=file_path, 
             filename=row.origname,  
             media_type='application/octet-stream'
         )
     else:
-        return {"error": ERROR_MESSAGES_EN.get("file_not_found","File not found") if settings.language == "en" else ERROR_MESSAGES_RU.get("file_not_found","Файл не найден")}
+        return {"error": get_err_message("file_not_found","File not found")}
     
 
 # Download the task - attachment file
@@ -317,28 +260,20 @@ async def download_task_attachment(session: SessionDep, id: int, current_user: U
     if row:
         file_path: str = os.path.join(UPLOAD_DIR, row.filename)   
         if not os.path.exists(file_path):
-            return {"error": ERROR_MESSAGES_EN.get("file_not_found","File not found") if settings.language == "en" else ERROR_MESSAGES_RU.get("file_not_found","Файл не найден")}
+            return {"error": get_err_message("file_not_found","File not found")}
         return FileResponse(
             path=file_path, 
             filename=row.origname,  
             media_type='application/octet-stream'
         )
     else:
-        return {"error": ERROR_MESSAGES_EN.get("file_not_found","File not found") if settings.language == "en" else ERROR_MESSAGES_RU.get("file_not_found","Файл не найден")}
+        return {"error": get_err_message("file_not_found","File not found")}
 
 
 # Get the previous messages based on the message id (for infinite scroll implementation on the client side)
 @app.get("/messages/get_prev/{id}", tags=["Communicator", "messages history"], summary="Get all the previous messages")
 async def prev_messages(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql: TextClause = text("""
-        SELECT m.id, u.username, m.messtext, to_char(m.created_at, 'DD.MM.YYYY HH24:MI') as created_at, 
-        (SELECT count(*) FROM mess_read R WHERE R.mess_id=m.id) as checked, u.avatar  
-        FROM messages m INNER JOIN users u ON m.userid=u.userid 
-        WHERE m.id < :mess_id  
-        ORDER BY m.id DESC LIMIT :max_mess_count 
-    """) 
-    result = await session.execute(sql, {"mess_id": id, "max_mess_count": settings.current_messages_max_count}) 
-    return result.mappings().all()  
+    return await get_massages_from_db(id, session, history=True) 
 
 
 # Get the number of reads and likes for the messages and also the information if the message is unread for the current user to warn that user (unread - if the message was created in the last 24 hours, user is not the author of the message and user did not read this message)
@@ -364,11 +299,12 @@ async def get_userslist(session: SessionDep, current_user: UserInfo = Depends(ge
 
 
 # Get all active tasks with all their comments and info about expired tasks
-@app.get("/tasks/get_tasks", tags=["Communicator", "tasks"], summary="Get all active tasks")
-async def get_tasks(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
+@app.get("/tasks/get_tasks/{include_closed}", tags=["Communicator", "tasks"], summary="Get all active tasks")
+async def get_tasks(session: SessionDep, include_closed: int=0, current_user: UserInfo = Depends(get_current_user)):
     sql: TextClause = text("""
-        SELECT t.id, u1.username as creator, t.title, t.description, to_char(t.created_at, 'DD.MM.YYYY') as created_at, u2.username as respons, 
-        to_char(t.deadline, 'DD.MM.YYYY') as deadline, CASE WHEN t.deadline < LOCALTIMESTAMP THEN 1 else 0 END as expired, (
+        SELECT t.id, u1.username as creator, t.title, t.description, to_char(t.created_at, 'DD.MM.YYYY') as created_at, to_char(t.start_date, 'DD.MM.YYYY') as start_date, u2.username as respons, 
+        CASE WHEN t.status='closed' THEN 'closed' WHEN DATE(t.start_date) > CURRENT_DATE THEN 'planned' ELSE 'started' END as status,                    
+        to_char(t.deadline, 'DD.MM.YYYY') as deadline, CASE WHEN t.deadline < LOCALTIMESTAMP AND t.status<>'closed' THEN 1 else 0 END as expired, (
             SELECT COALESCE(json_agg(json_build_object('c_id', c.id, 'username', u.username, 'comment', c.comment, 'created_at', to_char(c.created_at, 'DD.MM.YYYY HH24:MI')) ORDER BY c.id ASC), '[]'::json) 
             FROM comments c INNER JOIN users u ON c.creator = u.userid
             WHERE c.task_id=t.id 
@@ -379,21 +315,23 @@ async def get_tasks(session: SessionDep, current_user: UserInfo = Depends(get_cu
         FROM tasks t  
         INNER JOIN users u1 ON t.creator=u1.userid 
         INNER JOIN users u2 ON t.respons=u2.userid   
-        WHERE t.completed=0       
+        WHERE t.status <> 'closed' OR :include_closed=1       
         ORDER BY t.created_at
     """) 
-    result = await session.execute(sql) 
+    result = await session.execute(sql, {'include_closed': include_closed}) 
     return result.mappings().all()  
 
 
 # Get data for Gantt diagram
-@app.get("/tasks/gant", tags=["Communicator", "tasks"], summary="Get all active tasks")
-async def get_diagram_data(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql: TextClause = text("""SELECT t.id, DATE(t.created_at) - CURRENT_DATE as startcol, DATE(t.deadline) - CURRENT_DATE as endcol, t.title, to_char(t.deadline, 'DD.MM.YYYY') as deadline, 
-                    t.respons, CASE WHEN u.fio='' THEN u.username ELSE u.fio END as executor, CASE WHEN CURRENT_DATE > t.deadline THEN 1 ELSE 0 END as expired
+@app.get("/tasks/gant/{include_closed}", tags=["Communicator", "tasks"], summary="Get all active tasks")
+async def get_diagram_data(session: SessionDep, include_closed: int=0, current_user: UserInfo = Depends(get_current_user)):
+    sql: TextClause = text("""SELECT t.id, DATE(t.start_date) - CURRENT_DATE as startcol, DATE(t.deadline) - CURRENT_DATE as endcol, t.title, to_char(t.deadline, 'DD.MM.YYYY') as deadline, 
+                    t.respons, CASE WHEN u.fio='' THEN u.username ELSE u.fio END as executor, CASE WHEN CURRENT_DATE > t.deadline AND t.status<>'closed' THEN 1 ELSE 0 END as expired, 
+                    CASE WHEN t.status='closed' THEN 'closed' WHEN DATE(t.start_date) > CURRENT_DATE THEN 'planned' ELSE 'started' END as status
                     FROM tasks t INNER JOIN users u ON t.respons=u.userid 
+                    WHERE t.status <> 'closed' OR :include_closed = 1       
                     ORDER BY t.created_at""") 
-    result = await session.execute(sql) 
+    result = await session.execute(sql, {'include_closed': include_closed}) 
     return result.mappings().all()  
 
 
@@ -412,13 +350,17 @@ async def add_task(new_task: Tasks, session: SessionDep, current_user: UserInfo 
         if row:
             return {"result": "error", "details": "Task with the same title already exists" if settings.language == "en" else "Задача с таким названием уже существует"}  
          
-        newTaskOrm: TasksOrm = TasksOrm(creator=new_task.creator, respons=new_task.respons, deadline=new_task.deadline, title=new_task.title, description=task_description)
+        if new_task.start_date <= date.today():
+            new_task.status = TaskState.started
+        else: 
+            new_task.status = TaskState.planned     
+        newTaskOrm: TasksOrm = TasksOrm(creator=new_task.creator, respons=new_task.respons, start_date=new_task.start_date, deadline=new_task.deadline, title=new_task.title, description=task_description, status=new_task.status)
         try:
             session.add(newTaskOrm)
             await session.commit()
             logger.success(f"New task id: {new_task.id} successfully added")    
             message: str = f"Создана новая задача: {new_task.title}" if settings.language == "ru" else f"New task was created: {new_task.title}"
-            await notify_all(session, message)
+            await notify_all(session, message, current_user.userid)
             return {"result": "ok"}
         except IntegrityError as e:
             await session.rollback()
@@ -447,30 +389,29 @@ async def close_task(id: int, session: SessionDep, current_user: UserInfo = Depe
             result = await session.execute(sql, {"id": id}) 
         # Шлем оповещение о закрытии задачи     
         await notify_task_closing(session, id)       
-        #  Удаляем комментарии к задаче и саму задачу
+        #  Удаляем комментарии к задаче и саму задачу закрываем
         sql: TextClause = text("DELETE FROM comments WHERE task_id=:id") 
         result = await session.execute(sql, {"id": id}) 
-        sql: TextClause = text("DELETE FROM tasks WHERE id=:id") 
+        sql: TextClause = text("UPDATE tasks SET status='closed' WHERE id=:id") 
         result = await session.execute(sql, {"id": id}) 
         await session.commit()
         return {"result": "ok"}
     except Exception as e:
         await session.rollback()
-        logger.error(f"Error occurred while trying to delete task: {e}")    
+        logger.error(f"Error occurred while trying to close task: {e}")    
         return {"result": "error", "details": "An error occurred while closing the task" }    
     
 
 # Edit the task description (only for the task creator)
-@app.post("/tasks/edit", tags=["Communicator", "tasks", "close"], summary="close the task")
+@app.post("/tasks/edit", tags=["Communicator", "tasks", "close"], summary="edit the task")
 async def edit_task(task: TaskEdit, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
-    new_text: str = bleach.clean(task.messtext)
-    if (current_user.userid == task.userid) and (len(new_text) > 10):
+    if current_user.userid == task.userid:
         sql: TextClause = text("UPDATE tasks SET description=:messtext WHERE id=:id") 
-        result = await session.execute(sql, {"messtext": new_text, "id": task.id}) 
+        result = await session.execute(sql, {"messtext": task.messtext, "id": task.id}) 
         await session.commit()
         return {"result": "ok"}
     else:
-        return {"result": "error", "details": "you are not the creator of the task" if settings.language == "en" else "вы не являетесь создателем задачи"}
+        return {"result": "error", "details": "you are not the task creator" if settings.language == "en" else "вы не являетесь создателем задачи"}
 
 
 # Edit the task deadline (only for the task creator)
@@ -478,7 +419,7 @@ async def edit_task(task: TaskEdit, session: SessionDep, current_user: UserInfo 
 async def edit_deadline(deadline: DeadlineEdit, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
     if (current_user.userid == deadline.userid):
         sql: TextClause = text("UPDATE tasks SET deadline=:deadline WHERE id=:id AND :deadline >= CURRENT_DATE") 
-        result = await session.execute(sql, {"deadline": deadline.deadline, "id": deadline.id}) 
+        await session.execute(sql, {"deadline": deadline.deadline, "id": deadline.id}) 
         await session.commit()
         return {"result": "ok"}
     else:
@@ -488,9 +429,8 @@ async def edit_deadline(deadline: DeadlineEdit, session: SessionDep, current_use
 # Add a new personal message to the personal messages list for the current user
 @app.post("/messages/send_personal",  tags=["Communicator", "personal"], summary="send personal message")
 async def add_personal_message(message: Message, current_user: UserInfo = Depends(get_current_user)) -> dict:
-    messText: str = bleach.clean(message.messtext, tags=['b', 'i'], strip=True)
-    if no_have_such_message(message.userid, current_user.username, messText):
-        one_personal_message: dict = {"to": message.userid, "from": current_user.username, "messtext": messText, "created_at": datetime.now()}
+    if no_have_such_message(message.userid, current_user.username, message.messtext):
+        one_personal_message: dict = {"to": message.userid, "from": current_user.username, "messtext": message.messtext, "created_at": datetime.now()}
         personal.append(one_personal_message)
         logger.info("Created new personal message from " + current_user.username)
         return {"result": "ok"}
@@ -631,27 +571,10 @@ async def add_fio(user_fio: UserFio, session: SessionDep, current_user: UserInfo
 # add new comment to the task
 @app.post("/comments/add",  tags=["Communicator", "Comments", "new message"], summary="Add a new comment to the task")
 async def add_comment(new_comment: Comments, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
-    clean_text: str = bleach.clean(new_comment.comment, tags=['b', 'i'], strip=True)
-    try:
-        new_comment = CommentsOrm(task_id=new_comment.task_id, creator=new_comment.creator, comment=clean_text)
-        session.add(new_comment)
-        await session.commit()
-        logger.success(f"User {new_comment.creator} comment successfully added to task {new_comment.task_id}")
-        sql = text( "SELECT creator, title FROM tasks WHERE id = :id AND creator <> :creator")
-        result = await session.execute(sql, {"id": new_comment.task_id, "creator": new_comment.creator})
-        row = result.first()
-        if row:
-            personal.append({
-                'to': row.creator,
-                'from': 'System',
-                'created_at': datetime.now(),
-                'messtext': f"Создан комментарий к задаче {row.title}" if settings.language == "ru" else f"A comment has been created for the task {row.title}"     
-            })                 
-        return {"result": "ok"}
-    except Exception as e:
-        await session.rollback()
-        logger.error(f"Error occurred while trying to add comment: {e}")
-        return {"result": "error", "details": "An error occurred while adding the comment" if settings.language == "en" else "Произошла ошибка при добавлении комментария"}
+    newCommentORM = CommentsOrm(task_id=new_comment.task_id, creator=new_comment.creator, comment=new_comment.comment)
+    result: dict = await db_add_record(session, newCommentORM, f"new comment for task id={new_comment.task_id} user={new_comment.creator}")
+    await notify_new_comment(session, new_comment.task_id, new_comment.creator)               
+    return result
 
 
 @app.exception_handler(HTTPException)
