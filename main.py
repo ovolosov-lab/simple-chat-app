@@ -1,3 +1,5 @@
+from urllib.parse import quote, unquote
+
 from sqlalchemy import Select
 from sqlalchemy.sql import func
 from sqlalchemy import select
@@ -5,7 +7,7 @@ from services import daily_morning_task, make_message_read_liked
 from contextlib import asynccontextmanager
 from datetime import date, datetime
 import os
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 import uvicorn
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
@@ -81,7 +83,8 @@ async def health_check() -> JSONResponse:
 # Get the authorization page with the form for entering username and password, and also with the flash message if there is an error during the previous authorization attempt 
 @app.get("/", tags=["Communicator", "auth"], summary="Communicator auth page") 
 async def auth_page(request: Request, flash_msg: str | None = Cookie(None), i18n_data: dict = Depends(lambda: load_internationalization_data(BASE_DIR, settings.language))):
-    data: dict = {"flash_msg": flash_msg} if flash_msg else {}
+    decoded_msg = unquote(flash_msg) if flash_msg else None
+    data: dict = {"flash_msg": decoded_msg} if decoded_msg else {}
     response = templates.TemplateResponse("index.html", {"request": request, **i18n_data, **data})
     if flash_msg:
         response.delete_cookie(key="flash_msg")
@@ -122,18 +125,18 @@ async def add_user(new_user: Annotated[NewUser, Form()], session: SessionDep) ->
     if (new_user.password1 == new_user.password2):
         if (await user_exists(new_user.username, session)):
             response = RedirectResponse(url="/", status_code=303)
-            response.set_cookie(key="flash_msg", value=get_err_message("username_taken","This name was already taken"), httponly=True)
+            response.set_cookie(key="flash_msg", value=quote(get_err_message("username_taken","This name was already taken")), httponly=True)
             return response
         else:
             if new_user.secret == settings.friend_reference:  
                 return await create_new_user(new_user, session)
             else:  # введенное секретное слово не совпадает с правильным из настроек 
                 response = RedirectResponse(url="/", status_code=303)
-                response.set_cookie(key="flash_msg", value=get_err_message("secret_word","Секретное слово неверное"), httponly=True)
+                response.set_cookie(key="flash_msg", value=quote(get_err_message("secret_word","Секретное слово неверное")), httponly=True)
                 return response
     else:
         response = RedirectResponse(url="/", status_code=303)
-        response.set_cookie(key="flash_msg", value=get_err_message("password_mismatch","Пароли не совпадают"), httponly=True)
+        response.set_cookie(key="flash_msg", value=quote(get_err_message("password_mismatch","Пароли не совпадают")), httponly=True)
         return response
 
 
@@ -149,7 +152,7 @@ async def user_auth(user: Annotated[User, Form()], session: SessionDep) -> Redir
         return response
     else:
         response = RedirectResponse(url="/", status_code=303)
-        response.set_cookie(key="flash_msg", value=get_err_message("authorization_error","authorization error"), httponly=True)
+        response.set_cookie(key="flash_msg", value=quote(get_err_message("authorization_error","authorization error")), httponly=True)
         return response
 
 
@@ -330,7 +333,7 @@ async def get_diagram_data(session: SessionDep, include_closed: int=0, current_u
                     CASE WHEN t.status='closed' THEN 'closed' WHEN DATE(t.start_date) > CURRENT_DATE THEN 'planned' ELSE 'started' END as status
                     FROM tasks t INNER JOIN users u ON t.respons=u.userid 
                     WHERE t.status <> 'closed' OR :include_closed = 1       
-                    ORDER BY t.created_at""") 
+                    ORDER BY t.start_date""") 
     result = await session.execute(sql, {'include_closed': include_closed}) 
     return result.mappings().all()  
 
@@ -415,10 +418,10 @@ async def edit_task(task: TaskEdit, session: SessionDep, current_user: UserInfo 
 
 
 # Edit the task deadline (only for the task creator)
-@app.post("/tasks/deadline/edit", tags=["Communicator", "tasks", "deadline"], summary="edit task deadline")
-async def edit_deadline(deadline: DeadlineEdit, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
-    if (current_user.userid == deadline.userid):
-        sql: TextClause = text("UPDATE tasks SET deadline=:deadline WHERE id=:id AND :deadline >= CURRENT_DATE") 
+@app.post("/tasks/edit/{datefield}", tags=["Communicator", "tasks", "deadline"], summary="edit task deadline")
+async def edit_deadline(datefield: Literal["deadline", "start_date"], deadline: DeadlineEdit, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
+    if (current_user.userid == deadline.userid) and (datefield in ("deadline", "start_date")):
+        sql: TextClause = text(f"UPDATE tasks SET {datefield}=:deadline WHERE id=:id AND :deadline >= CURRENT_DATE") 
         await session.execute(sql, {"deadline": deadline.deadline, "id": deadline.id}) 
         await session.commit()
         return {"result": "ok"}
@@ -617,7 +620,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         )
     
     response = RedirectResponse(url="/", status_code=303)
-    response.set_cookie(key="flash_msg", value=final_msg, httponly=True)  
+    response.set_cookie(key="flash_msg", value=quote(final_msg), httponly=True)  
     return response
 
 

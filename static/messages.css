@@ -894,7 +894,7 @@ body.dark-theme .sun {
   margin-bottom: 0;
 }
 
-.deadline {
+.pointer {
   cursor: pointer;
 }
 
@@ -1406,7 +1406,7 @@ dialog {
 
 .Gant {
   display: grid;
-  grid-template-columns: repeat(60, 40px);
+  grid-template-columns: repeat(61, 40px);
   grid-template-rows: repeat(10px);
   column-gap: 0;
   row-gap: 30px;

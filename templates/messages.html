@@ -133,7 +133,7 @@
     </dialog>
 
     <dialog id="deadline_Dialog" data-id="0">
-        <div id="deadline_header" class="lsh">{{deadline_header}}</div>
+        <div id="data_edit_header" class="lsh"> </div>
         <div><input id="edit_deadline" type="date" value="" required></div>
         <div><button id="deadline_confirm">{{task_dlg_confirm_btn}}</button> <button
                 id="deadline_cancel">{{task_dlg_cancel_btn}}</button></div>
@@ -176,7 +176,7 @@
         <input type="file" id="fileInput" placeholder="{{fileInput_placeholder}}" on style="height:20px;">
         <div><button id="upload_btn" class="blue-button">{{upload_btn}}</button> <button onclick="closeUploadDialog()"
                 class="blue-button">{{close_file_btn}}</button></div>
-        <p id="status"></p>
+        <p id="upload_status"></p>
     </dialog>
 
     <dialog id="task_save_confirm_Dialog">
@@ -192,10 +192,10 @@
             </div>
             <div class="flex-between">
                 <div>
-                <span><b class="gant_planned_task">&nbsp;&nbsp;</b> - запланированные</span>
-                <span><b class="blue">&nbsp;&nbsp;</b> - текущие</span> 
-                <span><b class="gant_closed_task">&nbsp;&nbsp;</b> - закрытые</span> 
-                <span><b class="red">&nbsp;&nbsp;</b> - просроченные</span>    
+                <span><b class="gant_planned_task">&nbsp;&nbsp;</b> - {{legend_planned}}</span>
+                <span><b class="blue">&nbsp;&nbsp;</b> - {{legend_started}}</span> 
+                <span><b class="gant_closed_task">&nbsp;&nbsp;</b> - {{legend_closed}}</span> 
+                <span><b class="red">&nbsp;&nbsp;</b> - {{legend_expired}}</span>    
                 </div> 
                 <button id="close_diagram_btn">{{closeSP_btn}}</button>
             </div>
@@ -940,7 +940,7 @@
             e.preventDefault();
             const uploadBlock = document.getElementById('file_upload_block');
             const fileInput = document.getElementById('fileInput');
-            const status = document.getElementById('status');
+            const status = document.getElementById('upload_status');
 
             // Проверяем, выбрал ли пользователь файл
             if (fileInput.files.length === 0) {
@@ -1197,20 +1197,23 @@
                 let dTitle = "";
                 let tmp0 = "";
                 if (task.status != 'closed') {
+                    let task_status = "{{status_in_process}}";
+                    if (task.status == "planned") { task_status = "{{status_planned}}"; }
+
                     if (task.creator == userName) {
                         tmp0 = `<button class="close-task margin-right-10" onclick="closeTask(${task.id})" title="{{closeTaskButton}}">&#10060;</button>`;
-                        dTitle = "You can change it";
+                        dTitle = "{{you_can_change}}";
                     } else {
                     tmp0 = `<button class="close-task disabled margin-right-10" title="{{closeTaskButton}}">&#10060;</button>`;
                     } 
 
                     tmpHtml = `<span class="task_header">{{task_created_at}}: <b>${task.created_at}</b> <div class="task_title"><span class="task_title_span">${task.title}</span></div></span>
                        <span class="task_header">{{task_owner}}: <b>${task.creator}</b></span>
-                       <span class="task_header">{{start_date_label}}: <b>${task.start_date}</b></span>
-                       <span class="task_header"><span id="deadline_${task.id}" onclick="edit_deadline(${task.id}, '${task.deadline}', '${task.creator}')" class="deadline" title='${dTitle}'>{{task_deadline}}: <b>${task.deadline}</b></span>
+                       <span class="task_header" id="startdate_${task.id}" onclick="edit_task_dates(${task.id}, '${task.start_date}', '${task.creator}', 'startdate_${task.id}', '{{startdate_header}}')" class="pointer" title="${dTitle}">{{start_date_label}}: <b>${task.start_date}</b></span>
+                       <span class="task_header"><span id="deadline_${task.id}" onclick="edit_task_dates(${task.id}, '${task.deadline}', '${task.creator}', 'deadline_${task.id}', '{{deadline_header}}')" class="pointer" title="${dTitle}">{{task_deadline}}: <b>${task.deadline}</b></span>
                         ${tmp0} <button class="close-task" id="task_att_${task.id}" onclick="task_attachment_add(${task.id})">&#128450;&#65039;</button></span>
                        <span class="task_header">{{task_performer}}: <b>${task.respons}</b></span>
-                       <span class="task_header">{{task_status}}: <b>${task.status}</b></span>
+                       <span class="task_header">{{task_status}}: <b>${task_status}</b></span>
                        <hr class="task_header_line"/>
                        <div id="z_${task.id}" class="task_text${task_expired}" onclick="edit_task(${task.id}, '${task.creator}')" onfocusout="finish_task_edit(this)"  contenteditable="false">${task.description}</div>
                        <div id="z_add_comment_${task.id}" class="comment"></div><div class="details-wrapper" id="wrapper_${task.id}">
@@ -1233,9 +1236,10 @@
                 } else {
                     tmpHtml = `<div class="task_closed"><span class="task_header">{{task_created_at}}: <b>${task.created_at}</b> <div class="task_title"><span class="title_span_closed">${task.title}</span></div></span>
                        <span class="task_header">{{task_owner}}: <b>${task.creator}</b></span>
-                       <span class="task_header"><span id="closed_deadline_${task.id}" class="deadline">{{task_deadline}}: <b>${task.deadline}</b></span></span>
+                       <span class="task_header" id="closed_startdate_${task.id}">{{start_date_label}}: <b>${task.start_date}</b></span>
+                       <span class="task_header"><span id="closed_deadline_${task.id}">{{task_deadline}}: <b>${task.deadline}</b></span></span>
                        <span class="task_header">{{task_performer}}: <b>${task.respons}</b></span>
-                       <span class="task_header">{{task_status}}: <b class="status_closed">${task.status}</b></span>
+                       <span class="task_header">{{task_status}}: <b class="status_closed">{{status_closed}}</b></span>
                        <hr class="task_header_line"/>
                        <div id="closed_z_${task.id}" class="task_text" contenteditable="false">${task.description}</div></div><hr class="task_line"/>`;
                 }
@@ -1816,22 +1820,16 @@
                 const response = await fetch('/tasks/gant/'+show_closed, { credentials: 'include' });
                 const data = await response.json();
                 if (data) {
-                    let redPoint = 31;
                     let now = new Date();
-                    startPoint = Math.max(data[0].startcol - 2, -30) 
-                    console.log('startcol:', data[0].startcol, ' startPoint:', startPoint)   
-                    now.setDate(now.getDate() + startPoint);
+                    now.setDate(now.getDate() -31);
                     console.log('date: ', now.toISOString().split('T')[0]);
-                    endPoint = 30 - startPoint;
-                    console.log('endPoint:', endPoint);
 
-                    for (let i = 0; i < endPoint; i++) {
+                    for (let i = 0; i < 61; i++) {
                         let div = document.createElement('div');
                         now.setDate(now.getDate() + 1);
 
                         if (now.toISOString().split('T')[0] == new Date().toISOString().split('T')[0]) {
                             div.style = "color: red;";
-                            redPoint = i + 2;
                         }
 
                         let month1 = "0" + (now.getMonth() + 1);
@@ -1841,11 +1839,11 @@
                         div.className = "grid-header-dates";
                         gant.append(div);
                     }
-
+                
                     data.forEach(task => {
                         let div = document.createElement('div');
-                        let startCol = Math.max(task.startcol - startPoint, 1);
-                        let endCol = Math.min(task.endcol - startPoint + 1, 31 - startPoint);
+                        let startCol = Math.max(task.startcol + 31, 1);
+                        let endCol = Math.min(task.endcol + 32, 62);
                         div.className = 'task-bar';
 
                         if (task.status == 'planned') {
@@ -1854,8 +1852,8 @@
                             div.classList.add('gant_closed_task');
                         } else if (task.expired > 0) {
                             div.classList.add('gant_expired_task');
-                            if (endCol < redPoint) {
-                                endCol = redPoint;
+                            if (endCol < 32) {
+                                endCol = 32;
                             }    
                         }
 
@@ -1866,9 +1864,9 @@
 
                         gant.appendChild(div);
 
-                        console.log('start_col=', startCol, 'end_col=', endCol);
+                        console.log(task.title, 'start_col=', startCol, 'end_col=', endCol);
                         i++;
-                    });
+                    }); 
                 }
             } catch (error) {
                 console.error('Diagram data load error:', error);
@@ -1880,11 +1878,13 @@
 
 
         // Edit Task Deadline in dialog
-        function edit_deadline(task_id, dDate, creator) {
+        function edit_task_dates(task_id, dDate, creator, edit_target, header) {
             if (creator == '{{username}}') {
                 event.preventDefault();
+                document.getElementById("data_edit_header").innerText = header;
                 document.getElementById('edit_deadline').value = dDate.substring(6, 10) + '-' + dDate.substring(3, 5) + '-' + dDate.substring(0, 2);
                 deadlineDialog.dataset.id = task_id;
+                deadlineDialog.dataset.target = edit_target;
                 deadlineDialog.showModal();
             }
         }
@@ -1894,8 +1894,12 @@
         document.getElementById('deadline_confirm').addEventListener('click', async (e) => {
             let new_data = document.getElementById('edit_deadline').value;
             try {
-                let id = deadlineDialog.dataset.id;
-                const response = await fetch('/tasks/deadline/edit', {
+                const id = deadlineDialog.dataset.id;
+                const edit_target = deadlineDialog.dataset.target;
+                let route = 'start_date';
+                if (edit_target.startsWith('deadline')) { route = 'deadline'; }
+
+                const response = await fetch('/tasks/edit/'+route, {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json" },
                     credentials: 'include',
@@ -1911,7 +1915,7 @@
                         showToast(data.details);
                     } else {
                         let ddmmyy = new_data.split('-');
-                        document.getElementById('deadline_' + id).innerHTML = "{{task_deadline}}: <b style='color:#128256'>" + ddmmyy[2]+'.'+ddmmyy[1]+'.'+ddmmyy[0] + "</b>";
+                        document.getElementById(edit_target).innerHTML = "{{task_deadline}}: <b style='color:#128256'>" + ddmmyy[2]+'.'+ddmmyy[1]+'.'+ddmmyy[0] + "</b>";
                     }  
 
                     console.log(`Task id=${task_id} deadline edited - Server response:`, data);

@@ -240,7 +240,7 @@ async def notify_all(session: SessionDep, message: str, exclude_user: int = 0) -
 
 
 async def notify_new_comment(session: SessionDep, task_id: int, creator: int) -> None:
-    sql: TextClause = text( "SELECT t.title FROM tasks t WHERE t.task_id=:id LIMIT 1")
+    sql: TextClause = text( "SELECT t.title FROM tasks t WHERE t.id=:id LIMIT 1")
     result = await session.execute(sql, {"id": task_id})
     row = result.first()
     if row:

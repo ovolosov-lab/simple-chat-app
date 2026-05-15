@@ -99,10 +99,19 @@
     "the_same_file": "Такой файл уже отправляли", 
     "welcome": "welcome_ru.json",
     "deadline_header": "Изменить срок исполнения",
+    "startdate_header": "Изменить дату начала",
     "DocumDelete_question": "Удалить документ ?", 
     "user_name_title": "Кликни, чтобы изменить ФИО и аватар",
     "task_attachments": "Прикрепленные файлы",
     "show_closed_tasks": "показывать закрытые задачи", 
     "task_status": "Состояние",
-    "start_date_label": "Начальная дата" 
+    "start_date_label": "Дата старта", 
+    "you_can_change": "Эту дату можно изменить", 
+    "legend_planned": "запланированные",
+    "legend_started": "в работе",
+    "legend_closed": "завершенные", 
+    "legend_expired": "просроченные", 
+    "status_closed": "Закрыта", 
+    "status_in_process": "В работе", 
+    "status_planned": "Запланирована"
 }   
