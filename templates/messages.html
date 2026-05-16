@@ -1209,9 +1209,8 @@
 
                     tmpHtml = `<span class="task_header">{{task_created_at}}: <b>${task.created_at}</b> <div class="task_title"><span class="task_title_span">${task.title}</span></div></span>
                        <span class="task_header">{{task_owner}}: <b>${task.creator}</b></span>
-                       <span class="task_header" id="startdate_${task.id}" onclick="edit_task_dates(${task.id}, '${task.start_date}', '${task.creator}', 'startdate_${task.id}', '{{startdate_header}}')" class="pointer" title="${dTitle}">{{start_date_label}}: <b>${task.start_date}</b></span>
-                       <span class="task_header"><span id="deadline_${task.id}" onclick="edit_task_dates(${task.id}, '${task.deadline}', '${task.creator}', 'deadline_${task.id}', '{{deadline_header}}')" class="pointer" title="${dTitle}">{{task_deadline}}: <b>${task.deadline}</b></span>
-                        ${tmp0} <button class="close-task" id="task_att_${task.id}" onclick="task_attachment_add(${task.id})">&#128450;&#65039;</button></span>
+                       <span class="task_header pointer" id="startdate_${task.id}" onclick="edit_task_dates(${task.id}, '${task.start_date}', '${task.creator}', 'startdate_${task.id}', '{{startdate_header}}')" title="${dTitle}">{{start_date_label}}: <b>${task.start_date}</b></span>
+                       <span class="task_header pointer" id="deadline_${task.id}" onclick="edit_task_dates(${task.id}, '${task.deadline}', '${task.creator}', 'deadline_${task.id}', '{{deadline_header}}')" title="${dTitle}">{{task_deadline}}: <b>${task.deadline}</b></span>
                        <span class="task_header">{{task_performer}}: <b>${task.respons}</b></span>
                        <span class="task_header">{{task_status}}: <b>${task_status}</b></span>
                        <hr class="task_header_line"/>
@@ -1232,12 +1231,13 @@
                         });
                     }
 
-                    tmpHtml += `</details> </div><div class="add_comments" onclick="add_comment(${task.id})">{{task_add_comment}}</div><hr class="task_line"/>`;
+                    tmpHtml += `</details> </div><div class="add_comments" onclick="add_comment(${task.id})">{{task_add_comment}}</div><hr class="task_line"/>
+                    <div class="task_buttons"> ${tmp0} <button class="close-task" id="task_att_${task.id}" onclick="task_attachment_add(${task.id})" title="{{add_files_to_task}}">&#128450;&#65039;</button></div>`;
                 } else {
                     tmpHtml = `<div class="task_closed"><span class="task_header">{{task_created_at}}: <b>${task.created_at}</b> <div class="task_title"><span class="title_span_closed">${task.title}</span></div></span>
                        <span class="task_header">{{task_owner}}: <b>${task.creator}</b></span>
                        <span class="task_header" id="closed_startdate_${task.id}">{{start_date_label}}: <b>${task.start_date}</b></span>
-                       <span class="task_header"><span id="closed_deadline_${task.id}">{{task_deadline}}: <b>${task.deadline}</b></span></span>
+                       <span class="task_header" id="closed_deadline_${task.id}">{{task_deadline}}: <b>${task.deadline}</b></span></span>
                        <span class="task_header">{{task_performer}}: <b>${task.respons}</b></span>
                        <span class="task_header">{{task_status}}: <b class="status_closed">{{status_closed}}</b></span>
                        <hr class="task_header_line"/>
@@ -1251,8 +1251,13 @@
             parentDiv.innerHTML = '';
             parentDiv.appendChild(fragment);
             const div = document.createElement('div');
-            div.innerHTML = `<div class="button-flex"><div class="close-task show-diagram" onclick="showDiagram()"> {{show_diagram}} </div> &#128202;</div>`;
+            div.innerHTML = `<div class="button-flex"><select id="diagram_interval" onmousedown="show_diagram_select_mousedown()"><option value="61" selected>61</option><option value="122">122</option></select> 
+                             <div class="close-task show-diagram" onclick="showDiagram()"> {{show_diagram}} </div> &#128202; </div>`;
             parentDiv.appendChild(div);
+        }
+
+        function show_diagram_select_mousedown() {
+            scroll_switch.checked = false;
         }
 
         function commentDetailsToggle( id ) {
@@ -1809,22 +1814,28 @@
             event.stopPropagation();
         }
 
-        async function showDiagram() {     
+        async function showDiagram() {  
+            const interval = parseInt(document.getElementById("diagram_interval").value);   
             let show_closed = 0;
+            let daysBack = 31;
             if (taskShowClosedCB.checked) { show_closed = 1; }              
             const gant = document.getElementById('Gant');
+            gant.classList.remove("Gant122");    
+            if (interval == 122) {
+                gant.classList.add("Gant122");
+                daysBack = 62;   
+            }
             gant.innerHTML = '';
 
             try {
-                let i = 2;
                 const response = await fetch('/tasks/gant/'+show_closed, { credentials: 'include' });
                 const data = await response.json();
                 if (data) {
                     let now = new Date();
-                    now.setDate(now.getDate() -31);
+                    now.setDate(now.getDate() -daysBack);
                     console.log('date: ', now.toISOString().split('T')[0]);
 
-                    for (let i = 0; i < 61; i++) {
+                    for (let i = 0; i < interval; i++) {
                         let div = document.createElement('div');
                         now.setDate(now.getDate() + 1);
 
@@ -1839,11 +1850,12 @@
                         div.className = "grid-header-dates";
                         gant.append(div);
                     }
-                
+                                
+                    let i = 2;
                     data.forEach(task => {
                         let div = document.createElement('div');
-                        let startCol = Math.max(task.startcol + 31, 1);
-                        let endCol = Math.min(task.endcol + 32, 62);
+                        let startCol = Math.max(task.startcol + daysBack, 1);
+                        let endCol = Math.min(task.endcol + daysBack + 1, interval + 1);
                         div.className = 'task-bar';
 
                         if (task.status == 'planned') {
@@ -1852,8 +1864,8 @@
                             div.classList.add('gant_closed_task');
                         } else if (task.expired > 0) {
                             div.classList.add('gant_expired_task');
-                            if (endCol < 32) {
-                                endCol = 32;
+                            if (endCol < daysBack + 1) {
+                                endCol = daysBack + 1;
                             }    
                         }
 

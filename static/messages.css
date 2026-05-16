@@ -1207,6 +1207,7 @@ H3 {
 
 
 .task_card {
+  position: relative;
   display: flex;
   flex-direction: column;
   font-family: Arial, Helvetica, sans-serif;
@@ -1295,7 +1296,7 @@ body.dark-theme .content_editable_block {
 
 .close-task {
   display: block;
-  float: right;
+  width: 27px;
   margin-left: 3px;
   color: #f81212;
   background: #fff;
@@ -1303,11 +1304,11 @@ body.dark-theme .content_editable_block {
   cursor: pointer;
   padding: 5px;
   border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
 
 .close-task:hover {
-  background: #2196F3;
+  background: #0d2f53;
 }
 
 .details-wrapper {
@@ -1353,13 +1354,22 @@ body.dark-theme .content_editable_block {
   font-size: 0.8rem;
   margin-left: 5px;
   color: #302f2f;
+  height: 15px;
+  width: 140px;
+  font-family: Arial;
 }
 .show-diagram:hover {
   color: #fff;
 }
 
+#diagram_interval {
+  border: #999999 1px solid;
+  margin: 5px 10px 10px 10px;
+  border-radius: 10px; 
+}
+
 .disabled {
-  background: #c9c9c9 !important;
+  background: #ececec !important;
   cursor: not-allowed !important;
   color: rgba(0,0,0,0.1);
 }
@@ -1410,6 +1420,10 @@ dialog {
   grid-template-rows: repeat(10px);
   column-gap: 0;
   row-gap: 30px;
+}
+
+.Gant122 {
+  grid-template-columns: repeat(122, 40px);
 }
 
 .Gant div {
@@ -1717,6 +1731,7 @@ dialog::backdrop {
 .button-flex {
   display: flex;
   flex-direction: row-reverse;
+  margin-bottom: 15px;
 }
 
 .toast {
@@ -1884,6 +1899,15 @@ dialog::backdrop {
 }
 .nonVisibled {
   display: none;
+}
+
+.task_buttons {
+  position: absolute; 
+  display: flex;
+  top: 70px;
+  right: 20px; 
+  flex-direction: row;
+  gap: 0;
 }
 
 @media(max-width: 768px) {
