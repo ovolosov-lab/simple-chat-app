@@ -1,8 +1,12 @@
+import os
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 from loguru import logger
 
+BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_DIR: str = os.path.join(BASE_DIR, "uploads")
 
 ERROR_MESSAGES_RU = {
     "missing": "Поле обязательно для заполнения",
@@ -116,12 +120,12 @@ class Settings(BaseSettings):
     allowed_extensions: list = ["jpg", "jpeg", "png", "pdf", "doc", "docx", "xls", "xlsx", "txt", "zip", "z7", "rar"]
     client_messages_check_interval: int = 2000
     client_users_check_interval: int = 2000
-    largest_number_of_messages: int = 10000
-    largest_number_of_users: int = 10000
+    largest_number_of_users: int = 1000
     language: str = "en" 
     in_development: bool = False
     force_recreate_db: bool = False   
     hold_closed_tasks_days: int = 180
+    hold_messages_days: int = 730
 
 
     # Указываем, откуда брать данные

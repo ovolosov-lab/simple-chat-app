@@ -2,6 +2,7 @@ body {
   font-family: Arial, Helvetica, sans-serif, sans-serif;
   background-color: #f0f2f5;
   margin: 0;
+  padding: 0;
   display: flex;
   justify-content: center;
   height: 100vh;
@@ -1353,10 +1354,12 @@ body.dark-theme .content_editable_block {
 .show-diagram {
   font-size: 0.8rem;
   margin-left: 5px;
+  margin-right: 10px;
   color: #302f2f;
   height: 15px;
   width: 140px;
   font-family: Arial;
+  height:25px;
 }
 .show-diagram:hover {
   color: #fff;
@@ -1364,7 +1367,7 @@ body.dark-theme .content_editable_block {
 
 #diagram_interval {
   border: #999999 1px solid;
-  margin: 5px 10px 10px 10px;
+  margin: 5px 10px 10px 0;
   border-radius: 10px; 
 }
 
@@ -1918,3 +1921,159 @@ dialog::backdrop {
     padding-left: 0;
   }
 } 
+
+.parent-container {
+  position: absolute;
+  left:0;
+  top:0;
+  min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  z-index:20; 
+  background-color: #ddc5c5; 
+  background-image: 
+      radial-gradient(rgba(0,0,0,0.15) 15%, transparent 16%),
+      radial-gradient(rgba(0,0,0,0.15) 15%, transparent 16%),
+      radial-gradient(rgba(255,255,255,0.1) 15%, transparent 20%);
+  background-size: 4px 4px, 4px 4px, 6px 6px;
+  background-position: 0 0, 2px 2px, 1px 1px;    
+  color: #181818; 
+}
+
+.sticky-header {
+  position: sticky;
+  display: flex;
+  flex-direction:row;
+  align-content:space-between;
+  top: 0;
+  z-index: 30;
+  background-color: #ffffff; 
+  padding: 5px 0;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  width:100%;
+}
+.sticky-header .close-btn {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: red;
+  cursor: pointer;
+}
+          
+.sticky-header h4 {
+    width:99%;
+    font-family:Arial, Helvetica, sans-serif;
+    font-size: 1.2rem;
+    font-weight:normal;
+    padding: 0;
+    margin:0;
+}    
+
+.columns-wrapper {
+  display: flex;
+  flex-wrap: wrap; 
+  gap: 10px; 
+  padding-left: 10px;
+  padding-top: 15px;  
+  width:98vw;  
+}
+
+.single-column {
+  flex: 1 1 calc(33.333% - 20px);
+  /* min-width: 250px; - Убрать, если мне захочется, чтобы пустая колонка "исчезала" */
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  align-content: flex-start; 
+  flex-wrap: wrap; 
+  gap: 15px; 
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  width: 250px; 
+  height: 200px; 
+  box-sizing: border-box;
+  padding: 20px 15px 10px 15px; 
+  position: relative; 
+  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.15);
+  border-radius: 4px; 
+  transform: rotate(-1deg);
+  cursor: pointer;
+} 
+
+.card:nth-child(even) {
+  transform: rotate(1.5deg);
+}
+
+/* Канцелярская кнопка */
+.pin {
+  position: absolute;
+  top: -10px; 
+  left: calc(50% - 8px);
+  width: 16px;
+  height: 16px;
+  background-color: #ff4d4f; 
+  border-radius: 50%; 
+  background: radial-gradient(circle at 5px 5px, #ff7875, #ff4d4f 60%, #a8071a);
+  box-shadow: 2px 3px 4px rgba(0, 0, 0, 0.3);
+  z-index: 22; 
+}
+
+.pin::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 7px;
+  width: 2px;
+  height: 4px;
+  background-color: #8c8c8c; 
+}     
+            
+/* Цвета-стикеры для разных статусов */
+.card.closed       { background-color: #a3fdf9; } 
+.card.started  { background-color: #baddfd; } 
+.card.expired {
+        background-color: #baddfd;                 
+        background-image: linear-gradient(
+            45deg, 
+            transparent 90%,
+            #ff4d4f 90%     
+        );
+}        
+.card.planned   { background-color: #ffffff; } 
+
+.task_card_title {
+  width: 220px;
+  text-wrap: balance;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size:1.2rem;
+  color:#01197a;
+  margin-bottom: auto;
+}
+
+.div_task_header {
+  margin-bottom: auto;
+  padding-left:20px;
+}
+
+#oneCardDescriptionDlg {
+  max-width: 60%;
+}
+
+.padding_right_10 {
+  padding-right:10px;
+}
+
+@media(max-width: 768px) {
+  #oneCardDescriptionDlg {
+    max-width: 95%;
+  }
+  .single-column {
+    padding-left:10px;
+  }
+  .show-diagram {
+    height: 38px;
+  }
+}  

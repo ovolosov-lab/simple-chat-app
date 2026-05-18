@@ -1,4 +1,4 @@
-from models import UserInfo
+from models import MessageOrm, UserInfo
 import asyncio
 from datetime import datetime, timedelta
 from functools import lru_cache
@@ -16,13 +16,13 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import MappingResult, TextClause, delete, text
 from database import SessionDep, async_sessionmaker, check_user
-from config import ERROR_MESSAGES_EN, ERROR_MESSAGES_RU, settings, logger
+from config import ERROR_MESSAGES_EN, ERROR_MESSAGES_RU, UPLOAD_DIR, settings, logger
 from models import NewUser, TasksOrm, UserOrm
 from tokens import create_access_token, get_current_user
 from sqlalchemy import select, cast, Date
 
 
-personal = list()
+personal: list = list()
 
 
 async def create_new_user(new_user: Annotated[NewUser, Form()], session: SessionDep) -> RedirectResponse:
@@ -181,13 +181,14 @@ async def how_much_messages(session: SessionDep) -> int:
 async def daily_morning_task(session_factory: async_sessionmaker) -> None:
     async with session_factory() as session:
         today = datetime.now().date()
-        past_date = today - timedelta(days=settings.hold_closed_tasks_days)
+        task_past_date = today - timedelta(days=settings.hold_closed_tasks_days)
+        mess_past_date = today - timedelta(days=settings.hold_messages_days)
 
-        sql = select(TasksOrm).where(
+        query = select(TasksOrm).where(
             cast(TasksOrm.deadline, Date) == today,
             TasksOrm.status != 'closed'
         )
-        result = await session.execute(sql)
+        result = await session.execute(query)
         tasks = result.scalars().all()
         
         for task in tasks:
@@ -200,14 +201,35 @@ async def daily_morning_task(session_factory: async_sessionmaker) -> None:
             })
             
         try:
-            sql = delete(TasksOrm).where( TasksOrm.status == 'closed', TasksOrm.deadline < past_date)        
-            result = await session.execute(sql)
+            query = delete(TasksOrm).where( TasksOrm.status == 'closed', TasksOrm.deadline < task_past_date)        
+            result = await session.execute(query)
             await session.commit()
             logger.success("Deleting long-completed tasks was successful")
         except Exception as e:
             await session.rollback()
             logger.error(f"An error occurred while deleting long-completed tasks: {e}")
-
+        """ 
+        deleting old messages (and attached files) deleting where messages.created_at < today - settings.hold_messages_days 
+        !!!! to do: need to delete from disk all the files attached to that messages   
+        """
+        try:
+            sql: TextClause = text("SELECT m.id, a.filename FROM  attachments a INNER JOIN messages m ON a.mess_id=m.id WHERE m.created_at < :past")
+            result = await session.execute(sql, {"past": mess_past_date})
+            rows = result.fetchall()   
+            if rows:  
+                for row in rows:
+                    delete_file_from_disk(row.filename, UPLOAD_DIR)
+                    # теперь удалим записи в базе данных   
+                    sql: TextClause = text("DELETE FROM attachments WHERE mess_id=:id") 
+                    result = await session.execute(sql, {"id": row.id})     
+            # теперь можем удалить сами слишком старые сообщения
+            query = delete(MessageOrm).where( MessageOrm.created_at < mess_past_date )        
+            result = await session.execute(query)
+            await session.commit()
+            logger.success("Deleting too old messages was successful")
+        except Exception as e:
+            await session.rollback()
+            logger.error(f"An error occurred while deleting too old messages: {e}")
 
 
 async def notify_task_closing(session: SessionDep, task_id: int) -> None:

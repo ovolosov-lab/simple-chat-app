@@ -114,5 +114,8 @@
     "status_closed": "Closed", 
     "status_in_process": "In process", 
     "status_planned": "Planned", 
-    "add_files_to_task": "Attach files"
+    "status_expired": "Expired", 
+    "add_files_to_task": "Attach files",
+    "tasks_board": "Task Board Stickers",
+    "show_desk": "Desk with stickers"
 }

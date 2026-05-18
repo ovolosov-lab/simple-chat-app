@@ -113,6 +113,9 @@
     "legend_expired": "просроченные", 
     "status_closed": "Закрыта", 
     "status_in_process": "В работе", 
+    "status_expired": "Просрочена", 
     "status_planned": "Запланирована", 
-    "add_files_to_task": "Добавить файлы"
+    "add_files_to_task": "Добавить файлы",
+    "tasks_board": "Доска задач со стикерами",
+    "show_desk": "Доска со стикерами"
 }   

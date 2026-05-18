@@ -202,6 +202,26 @@
         </div>
     </dialog>
 
+    <dialog id="oneCardDescriptionDlg">
+        <p id="one_card_title" class="task_card_title"></p>
+        <p id="one_card_description" class="personal_message_text"></p>
+        <button id="oneCardDescriptionClose" onclick="oneCardDescriptionDlgClose()">{{closeSP_btn}}</button>
+    </dialog>
+
+
+    <div id="tasksCardsBoard" class="parent-container hide">
+        <div class="sticky-header">
+            <h4>{{tasks_board}}</h4><span class="close-btn padding_right_10" onclick="tasksCardsBoardClose()" title="{{close_file_btn}}"> × </span>
+        </div>
+        
+        <div class="columns-wrapper">
+            <div id="board-column-closed" class="single-column"></div>
+            <div id="board-column-in-process" class="single-column"></div>            
+            <div id="board-column-planned" class="single-column"></div>
+        </div>
+    </div>
+    
+
     <div id="custom-menu" class="context-menu">
         <div data-action="read" class="menu-item">{{menu_item_read}}</div>
         <div data-action="like" class="menu-item">{{menu_item_like}}</div>
@@ -1252,7 +1272,7 @@
             parentDiv.appendChild(fragment);
             const div = document.createElement('div');
             div.innerHTML = `<div class="button-flex"><select id="diagram_interval" onmousedown="show_diagram_select_mousedown()"><option value="61" selected>61</option><option value="122">122</option></select> 
-                             <div class="close-task show-diagram" onclick="showDiagram()"> {{show_diagram}} </div> &#128202; </div>`;
+                             <button class="close-task show-diagram" onclick="showDiagram()"> {{show_diagram}} </button> &#128202; <button class="close-task show-diagram" onclick="showTaskBoard()">{{show_desk}}</button></div>`;
             parentDiv.appendChild(div);
         }
 
@@ -1613,6 +1633,15 @@
                         elem.classList.remove("content_editable_block");
                         elem.contentEditable = "false";
                     });
+                } else {
+                    const board = document.getElementById("tasksCardsBoard");
+                    console.log(board.classList);
+                    if (!board.classList.contains("hide")) {
+                        document.getElementById("board-column-planned").innerHTML = '';
+                        document.getElementById("board-column-in-process").innerHTML = '';   
+                        document.getElementById("board-column-closed").innerHTML = '';
+                        board.classList.add("hide");
+                    }
                 }
 
                 hideToast();
@@ -1804,7 +1833,7 @@
             }
             add_comments.forEach(elem => { elem.classList.remove("hide") });
             parent.innerHTML = "";
-            event.stopPropagation();
+            // event.stopPropagation();
         }
 
         function cancel_comment(id) {
@@ -1957,7 +1986,81 @@
                 toast.classList.remove("show");
                 setTimeout(() => toast.classList.add("hidden"), 500); 
             }
-        }        
+        }     
+
+        async function showTaskBoard() {
+            try {
+                const response = await fetch('/tasks/get_tasks/1', { credentials: 'include' });
+                const data = await response.json();
+                if (data) {
+                    const board = document.getElementById("tasksCardsBoard");
+                    board.classList.remove("hide");  
+                    const plannedColumn = document.getElementById("board-column-planned");
+                    const inProcColumn = document.getElementById("board-column-in-process");   
+                    const closedColumn = document.getElementById("board-column-closed");  
+
+                    data.forEach(task => {
+                        // Создаем контейнер карточки
+                        const card = document.createElement('div');
+                        if (task.expired == 1) {
+                            card.classList.add('card', "expired"); 
+                        } else {
+                            card.classList.add('card', task.status); 
+                        }    
+                        const pin = document.createElement('div');
+                        pin.classList.add('pin');
+                        card.appendChild(pin);
+                    
+                        // контент         
+                        let task_status = "{{status_in_process}}";
+                        if (task.status == "planned") { 
+                            task_status = "{{status_planned}}"; 
+                        } else if (task.expired == 1) {
+                            task_status = "{{status_expired}}"; 
+                        } else if (task.status == "closed") {
+                            task_status = "{{status_closed}}"; 
+                        }
+                        card.innerHTML += `
+                        <div class="task_card_title">${task.title}</div><div class="div_task_header">
+                        <span class="task_header">{{task_owner}}: <b>${task.creator}</b></span>
+                        <span class="task_header">{{start_date_label}}: <b>${task.start_date}</b></span>
+                        <span class="task_header">{{task_deadline}}: <b>${task.deadline}</b></span></span>
+                        <span class="task_header">{{task_performer}}: <b>${task.respons}</b></span>
+                        <span class="task_header">{{task_status}}: <b class="status_closed">${task_status}</b></span></div>
+                        `;
+
+                        card.addEventListener('click', (e) => {showOneCardDesctiption(task.title, task.description); e.stopPropagation(); })
+                    
+                        // Вставляем в одну из колонок
+                        if (task.status == "closed") { closedColumn.appendChild(card); } 
+                        else if (task.status == "planned" ) { plannedColumn.appendChild(card); } 
+                        else { inProcColumn.appendChild(card); }                       
+                    })
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки задач:', error);
+                tasksDiv.classList.remove("taskDiv_opened");
+            }
+        }
+
+        function tasksCardsBoardClose() {
+            const board = document.getElementById("tasksCardsBoard");
+            document.getElementById("board-column-planned").innerHTML = '';
+            document.getElementById("board-column-in-process").innerHTML = '';   
+            document.getElementById("board-column-closed").innerHTML = '';
+            board.classList.add("hide");            
+        }
+
+        function showOneCardDesctiption(title, description) {
+            const oneCard = document.getElementById("oneCardDescriptionDlg");
+            oneCard.querySelector("#one_card_title").innerText = title;
+            oneCard.querySelector("#one_card_description").innerText = description;
+            oneCard.showModal();
+        }
+
+        function oneCardDescriptionDlgClose() {
+            document.getElementById("oneCardDescriptionDlg").close();
+        }
     </script>
 </body>
 

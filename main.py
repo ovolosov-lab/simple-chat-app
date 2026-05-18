@@ -1,19 +1,17 @@
 from urllib.parse import quote, unquote
-
-from sqlalchemy import Select
+import os
+from datetime import date, datetime
+from typing import Annotated, Literal
 from sqlalchemy.sql import func
 from sqlalchemy import select
 from services import daily_morning_task, make_message_read_liked
 from contextlib import asynccontextmanager
-from datetime import date, datetime
-import os
-from typing import Annotated, Any, Literal
 import uvicorn
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import Result, TextClause, text
+from sqlalchemy import TextClause, text
 from fastapi import Cookie, FastAPI, File, Form, Depends, HTTPException, Request, UploadFile
 from sqlalchemy.exc import IntegrityError
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,11 +19,10 @@ from database import db_add_record, db_connection_check, engine, SessionDep, che
 from models import AttachmentsOrm, Comments, CommentsOrm, DeadlineEdit, DocsNotes, MessId, Message, MessageOrm, NewUser, TaskAttachmentsOrm, TaskEdit, TaskState, Tasks, TasksOrm, User, UserFio, UserInfo, Docs, DocsOrm 
 from sheduler import AsyncPeriodicTask, AsyncDailyTask
 from tokens import create_access_token, get_current_user 
-from config import settings, logger, ERROR_MESSAGES_EN, ERROR_MESSAGES_RU
+from config import BASE_DIR, UPLOAD_DIR, settings, logger, ERROR_MESSAGES_EN, ERROR_MESSAGES_RU
 from services import ProtectedStaticFiles, create_new_user, delete_file_from_disk, get_err_message, load_internationalization_data, background_checks, makeFileResponse, no_have_such_message, get_personal_messages, notify_all, notify_new_comment, notify_task_closing, personal, save_user_file_to_disk, how_much_messages
 
-BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_DIR: str = os.path.join(BASE_DIR, "uploads")
+
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 templates: Jinja2Templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
@@ -382,11 +379,12 @@ async def add_task(new_task: Tasks, session: SessionDep, current_user: UserInfo 
 async def close_task(id: int, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
     try:
         # Найти приаттаченные файлы в task_attachments и удалить их с диска перед удалением задачи !!! 
-        sql: TextClause = text("SELECT a.filename FROM task_attachments a WHERE a.task_id=:task_id LIMIT 1")
+        sql: TextClause = text("SELECT a.filename FROM task_attachments a WHERE a.task_id=:task_id")
         result = await session.execute(sql, {"task_id": id})
-        row = result.first()   
-        if row:  
-            delete_file_from_disk(row.filename, UPLOAD_DIR)
+        rows = result.fetchall()   
+        if rows:  
+            for row in rows:
+                delete_file_from_disk(row.filename, UPLOAD_DIR)
             # теперь удалим записи в базе данных   
             sql: TextClause = text("DELETE FROM task_attachments WHERE task_id=:id") 
             result = await session.execute(sql, {"id": id}) 
