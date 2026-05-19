@@ -437,7 +437,6 @@
                     credentials: 'include',
                     body: JSON.stringify({
                         userid: to_userid,
-                        from: from_name,
                         messtext: pers_messInput.value
                     })
                 });
@@ -719,7 +718,7 @@
                         if (data.length > 0) {
                             data.forEach(msg => {
                                 pers_mess_header.textContent = `{{you_have_personal_message}}`;
-                                sender_info.textContent = msg.from;
+                                sender_info.textContent = msg.sender;
                                 pers_mess_text.textContent = msg.messtext;
                                 showPersDlg.showModal();
                             });
