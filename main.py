@@ -20,7 +20,7 @@ from models import AttachmentsOrm, Comments, CommentsOrm, DeadlineEdit, DocsNote
 from sheduler import AsyncPeriodicTask, AsyncDailyTask
 from tokens import create_access_token, get_current_user 
 from config import BASE_DIR, UPLOAD_DIR, settings, logger, ERROR_MESSAGES_EN, ERROR_MESSAGES_RU
-from services import ProtectedStaticFiles, create_new_user, delete_file_from_disk, get_err_message, load_internationalization_data, background_checks, makeFileResponse, no_have_such_message, get_personal_messages, notify_all, notify_new_comment, notify_task_closing, personal, save_user_file_to_disk, how_much_messages
+from services import ProtectedStaticFiles, create_new_user, delete_file_from_disk, get_err_message, load_internationalization_data, background_checks, makeFileResponse, notify_all, notify_new_comment, notify_task_closing, personal, save_user_file_to_disk, how_much_messages
 
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -412,7 +412,7 @@ async def edit_task(task: TaskEdit, session: SessionDep, current_user: UserInfo 
         await session.commit()
         return {"result": "ok"}
     else:
-        return {"result": "error", "details": "you are not the task creator" if settings.language == "en" else "вы не являетесь создателем задачи"}
+        return {"result": "error", "details": get_err_message("you are not the task creator", "")}
 
 
 # Edit the task deadline (only for the task creator)
@@ -424,25 +424,23 @@ async def edit_deadline(datefield: Literal["deadline", "start_date"], deadline: 
         await session.commit()
         return {"result": "ok"}
     else:
-        return {"result": "error", "details": "you are not the creator of the task" if settings.language == "en" else "вы не являетесь создателем задачи"}
+        return {"result": "error", "details": get_err_message("you are not the task creator", "")}
 
 
 # Add a new personal message to the personal messages list for the current user
 @app.post("/messages/send_personal",  tags=["Communicator", "personal"], summary="send personal message")
 async def add_personal_message(message: Message, current_user: UserInfo = Depends(get_current_user)) -> dict:
-    if no_have_such_message(message.userid, current_user.username, message.messtext):
-        one_personal_message: dict = {"to": message.userid, "from": current_user.username, "messtext": message.messtext, "created_at": datetime.now()}
-        personal.append(one_personal_message)
-        logger.info("Created new personal message from " + current_user.username)
+    if personal.no_have_such_message(message.userid, current_user.username, message.messtext):
+        personal.add_message(to=message.userid, sender=current_user.username, messtext=message.messtext)  
         return {"result": "ok"}
     else:
-        return {"result": "error", "details": "duplicated message" if settings.language == "en" else "сообщение уже существует"}
+        return {"result": "error", "details": get_err_message("duplicated message","") }
     
 
 # Get all personal messages for the current user
 @app.get("/messages/get_personal", tags=["Communicator", "personal"], summary="get personal message")    
 async def get_personal_message(current_user: UserInfo = Depends(get_current_user)):
-    return get_personal_messages(current_user.userid)
+    return personal.pop(current_user.userid)
 
 
 # Delete a message and its associated files

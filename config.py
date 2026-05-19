@@ -49,7 +49,7 @@ ERROR_MESSAGES_RU = {
     "You are not authorized": "Вы не авторизованы", 
     "date_in_past": "Дата не может быть в прошлом",
     "duplicated_message": "Сообщение уже существует", 
-    "Method Not Allowed": "Введены неверные данные"    
+    "Method Not Allowed": "Введены неверные данные"
 }
 
 ERROR_MESSAGES_EN = {
@@ -92,8 +92,8 @@ ERROR_MESSAGES_EN = {
     "user_info_update_error": "Error occurred while trying to update user info",
     "You are not authorized": "You are not authorized",
     "date_in_past": "Date cannot be in the past",
-    "duplicated_message": "Message already exists", 
-    "Method Not Allowed": "Method Not Allowed" 
+    "Method Not Allowed": "Method Not Allowed", 
+    "duplicated message": "Such a message already exists" 
 }   
 
 

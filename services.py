@@ -1,28 +1,26 @@
-from models import MessageOrm, UserInfo
-import asyncio
 from datetime import datetime, timedelta
 from functools import lru_cache
 import json
 import os
 import re
 import shutil
-from fastapi.responses import FileResponse, RedirectResponse
 from typing_extensions import Annotated
 import uuid
-
 import pathlib
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi import File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import MappingResult, TextClause, delete, text
+from sqlalchemy import TextClause, delete, text
+from sqlalchemy import select, cast, Date
+from models import MessageOrm, UserInfo, NewUser, TasksOrm, UserOrm
 from database import SessionDep, async_sessionmaker, check_user
 from config import ERROR_MESSAGES_EN, ERROR_MESSAGES_RU, UPLOAD_DIR, settings, logger
-from models import NewUser, TasksOrm, UserOrm
+from personal import PersonalMessages
 from tokens import create_access_token, get_current_user
-from sqlalchemy import select, cast, Date
 
 
-personal: list = list()
+personal: PersonalMessages = PersonalMessages()
 
 
 async def create_new_user(new_user: Annotated[NewUser, Form()], session: SessionDep) -> RedirectResponse:
@@ -67,27 +65,6 @@ class ProtectedStaticFiles(StaticFiles):
         except:    
             raise HTTPException(status_code=401, detail="Authorization error")  
         
-
-def no_have_such_message(addr: int, sender: str, messtext: str) -> bool: 
-    no_found: bool = True   
-    for mess in personal:
-        if (mess['to'] == addr) and (mess['from'] == sender):
-            if ((datetime.now() - mess['created_at']).total_seconds() < 4) or (mess['messtext'] == messtext):
-                no_found = False
-                break 
-    return no_found       
-
-
-def get_personal_messages(userid: int) -> list | dict:
-    for i in range(0, len(personal)):
-        mess = personal[i]
-        if mess['to'] == userid:
-            sender = mess['from']
-            mess_text = mess['messtext']
-            del personal[i]
-            return [{'from': sender, 'messtext': mess_text}] 
-    return {}       
-
 
 # Функции для всего блока работы с файлами
 
@@ -169,6 +146,8 @@ def load_internationalization_data(BASE_DIR: str, language: str) -> dict:
 
 
 def get_err_message(key: str, default: str) -> str:
+    if default == "": 
+        default = key
     return ERROR_MESSAGES_EN.get(key, default) if settings.language == "en" else ERROR_MESSAGES_RU.get(key, default) 
 
 
@@ -193,12 +172,7 @@ async def daily_morning_task(session_factory: async_sessionmaker) -> None:
         
         for task in tasks:
             mess_text = f"Задача {task.title} сегодня должна быть завершена" if settings.language == "ru" else f"Task {task.title} must be completed today"     
-            personal.append({
-                'to': task.respons,
-                'from': 'System',
-                'created_at': datetime.now(),
-                'messtext': mess_text
-            })
+            personal.add_message(to=task.respons, sender='System', messtext=mess_text) 
             
         try:
             query = delete(TasksOrm).where( TasksOrm.status == 'closed', TasksOrm.deadline < task_past_date)        
@@ -231,6 +205,9 @@ async def daily_morning_task(session_factory: async_sessionmaker) -> None:
             await session.rollback()
             logger.error(f"An error occurred while deleting too old messages: {e}")
 
+        """ удаляем из памяти персональные сообщения, не востребованные в течение суток """
+        personal.clear_expired()
+
 
 async def notify_task_closing(session: SessionDep, task_id: int) -> None:
     sql: TextClause = text("SELECT title, respons FROM tasks WHERE id=:id LIMIT 1") 
@@ -238,12 +215,7 @@ async def notify_task_closing(session: SessionDep, task_id: int) -> None:
     task = result.first() 
     if task: 
         mess_text = f"Задача {task.title} закрывается" if settings.language == "ru" else f"Task {task.title} is being closed"     
-        personal.append({
-            'to': task.respons,
-            'from': 'System',
-            'created_at': datetime.now(),
-            'messtext': mess_text
-        })       
+        personal.add_message(to=task.respons, sender='System', messtext=mess_text) 
 
 
 async def notify_all(session: SessionDep, message: str, exclude_user: int = 0) -> None:
@@ -253,12 +225,8 @@ async def notify_all(session: SessionDep, message: str, exclude_user: int = 0) -
     result = await session.execute(sql)
     users = result.scalars().all()
     for usr in users:
-        personal.append({
-            'to': usr.userid,
-            'from': 'System',
-            'created_at': datetime.now(),
-            'messtext':message
-        })
+        personal.add_message(to=usr.userid, sender='System', messtext=message) 
+
 
 
 async def notify_new_comment(session: SessionDep, task_id: int, creator: int) -> None:

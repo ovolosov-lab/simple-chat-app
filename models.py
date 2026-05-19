@@ -3,8 +3,7 @@ from typing import Annotated
 
 from annotated_types import Gt
 import bleach
-from fastapi import types
-from pydantic import AfterValidator, BaseModel, BeforeValidator, Field, field_validator
+from pydantic import AfterValidator, BaseModel, BeforeValidator, Field
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -124,7 +123,7 @@ class DocsOrm(Base):
 # --------------------------- Pydantic classes -----------------------
 
 clean_before = BeforeValidator(lambda v: bleach.clean(str(v or ''), strip=True).strip())
-clean_before_bi = BeforeValidator(lambda v: bleach.clean(str(v), tags=['b', 'i'], strip=True).strip())
+clean_before_bi = BeforeValidator(lambda v: bleach.clean(str(v or ''), tags=['b', 'i'], strip=True).strip())
 
 def validate_not_past(v: date) -> date:
     if v < date.today():
