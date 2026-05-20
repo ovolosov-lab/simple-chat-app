@@ -5,10 +5,6 @@ from config import ERROR_MESSAGES_EN, ERROR_MESSAGES_RU, settings
 from models import UserInfo
 
 
-
-#SECRET_KEY = "927_C,m03856_,shfcgfnm_12spar!001_&90"
-#ALGORITHM = "HS256"
-
 def create_access_token(data: dict) -> str:
     to_encode: dict = data.copy()
     expire: datetime = datetime.now() + timedelta(minutes=settings.access_token_expire_minutes)

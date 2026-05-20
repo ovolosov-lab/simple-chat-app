@@ -2075,7 +2075,7 @@ dialog::backdrop {
     max-width: 95%;
   }
   .single-column {
-    padding-left:10px;
+    padding-left:20px;
   }
   .show-diagram {
     height: 38px;

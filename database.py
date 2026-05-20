@@ -3,8 +3,7 @@ import asyncio
 from fastapi import Depends
 from sqlalchemy import URL, Result, TextClause, text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from typing import Annotated, TypeVar, Any
-from crpass import verify_password
+from typing import Annotated, Any
 from models import Base
 from config import settings, logger
 

@@ -2053,7 +2053,10 @@
         function showOneCardDesctiption(title, description) {
             const oneCard = document.getElementById("oneCardDescriptionDlg");
             oneCard.querySelector("#one_card_title").innerText = title;
-            oneCard.querySelector("#one_card_description").innerText = description;
+            oneCard.querySelector("#one_card_description").innerText = description; 
+            if (description.length < 1000) {
+                oneCard.style = "max-width: 500px;";
+            }
             oneCard.showModal();
         }
 
