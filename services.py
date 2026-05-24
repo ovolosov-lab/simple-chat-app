@@ -35,21 +35,6 @@ async def create_new_user(new_user: Annotated[NewUser, Form()], session: Session
     return response
 
 
-async def background_checks(session_factory: async_sessionmaker) -> None:
-    logger.info("Activity check started")
-    async with session_factory() as session:
-        sql = text("""
-            UPDATE users SET active = CASE WHEN EXISTS(
-	            SELECT M.id FROM messages M WHERE M.userid=users.userid AND (EXTRACT(EPOCH FROM (now() - M.created_at)) < 300) 
-	        ) OR EXISTS(
-	            SELECT R.mess_id FROM mess_read R WHERE R.userid=users.userid AND (EXTRACT(EPOCH FROM (now() - R.read_time)) < 300)
-	        ) THEN true ELSE false END; 
-               """) 
-        await session.execute(sql)
-        await session.commit()
-        logger.success("Activity check completed successfully")
-
-
 class ProtectedStaticFiles(StaticFiles):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -132,7 +117,6 @@ def makeFileResponse(savedName: str, realName: str, upload_dir: str) -> FileResp
     )
 
 
-
 @lru_cache()
 def load_internationalization_data(BASE_DIR: str, language: str) -> dict:
     i18n_file = os.path.join(BASE_DIR, f"locales/i18n_{language}.json")
@@ -149,12 +133,6 @@ def get_err_message(key: str, default: str) -> str:
     if default == "": 
         default = key
     return ERROR_MESSAGES_EN.get(key, default) if settings.language == "en" else ERROR_MESSAGES_RU.get(key, default) 
-
-
-async def how_much_messages(session: SessionDep) -> int:
-    sql = text("SELECT COUNT(*) FROM messages")
-    result = await session.execute(sql)
-    return result.scalar() or 0
 
 
 async def daily_morning_task(session_factory: async_sessionmaker) -> None:
@@ -228,7 +206,6 @@ async def notify_all(session: SessionDep, message: str, exclude_user: int = 0) -
         personal.add_message(to=usr.userid, sender='System', messtext=message) 
 
 
-
 async def notify_new_comment(session: SessionDep, task_id: int, creator: int) -> None:
     sql: TextClause = text( "SELECT t.title FROM tasks t WHERE t.id=:id LIMIT 1")
     result = await session.execute(sql, {"id": task_id})
@@ -237,13 +214,3 @@ async def notify_new_comment(session: SessionDep, task_id: int, creator: int) ->
         message: str = f"Создан комментарий к задаче {row.title}" if settings.language == "ru" else f"A comment has been created for the task {row.title}"  
         await notify_all(session, message, creator)
 
-
-#  Checking that the user has read/liked the message (adding the user to the read/liked table and returning the count of read/liked users)
-async def make_message_read_liked(session: SessionDep, message_id: int, current_user: UserInfo, tableName: str, resultOnly: bool = False):
-    if not resultOnly: 
-        sql: TextClause = text(f"INSERT INTO {tableName}(mess_id, userid) SELECT A.id, :user_id FROM messages A WHERE A.id=:id AND NOT EXISTS(SELECT B.userid FROM {tableName} B WHERE B.mess_id=:mess_id AND B.userid=:userid)") 
-        result = await session.execute(sql, {"user_id": current_user.userid, "id": message_id, "mess_id": message_id, "userid": current_user.userid}) 
-        await session.commit()
-    sql: TextClause = text(f"SELECT R.mess_id, count(*) as cnt FROM {tableName} R WHERE R.mess_id=:id GROUP BY R.mess_id")
-    result = await session.execute(sql, {"id": message_id})
-    return result.mappings().all()

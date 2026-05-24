@@ -4,7 +4,8 @@ from datetime import date
 from typing import Annotated, Literal
 from sqlalchemy.sql import func
 from sqlalchemy import select
-from services import daily_morning_task, make_message_read_liked
+from send2anywhere import Notifier_factory
+from services import daily_morning_task 
 from contextlib import asynccontextmanager
 import uvicorn
 from fastapi.exceptions import RequestValidationError
@@ -16,11 +17,12 @@ from fastapi import Cookie, FastAPI, File, Form, Depends, HTTPException, Request
 from sqlalchemy.exc import IntegrityError
 from fastapi.middleware.cors import CORSMiddleware
 from database import db_add_record, db_connection_check, engine, SessionDep, check_user, create_all_tables, get_massages_from_db, user_exists, new_session
-from models import AttachmentsOrm, Comments, CommentsOrm, DeadlineEdit, DocsNotes, MessId, Message, MessageOrm, NewUser, TaskAttachmentsOrm, TaskEdit, TaskState, Tasks, TasksOrm, User, UserFio, UserInfo, Docs, DocsOrm 
+from database import background_checks, make_message_read_liked, how_much_messages
+from models import AttachmentsOrm, Comments, CommentsOrm, DeadlineEdit, DocsNotes, MessId, Message, MessageOrm, NewUser, NotifyInfo, TaskAttachmentsOrm, TaskEdit, TaskState, Tasks, TasksOrm, User, UserFio, UserInfo, Docs, DocsOrm 
 from sheduler import AsyncPeriodicTask, AsyncDailyTask
 from tokens import create_access_token, get_current_user 
 from config import BASE_DIR, UPLOAD_DIR, settings, logger, ERROR_MESSAGES_EN, ERROR_MESSAGES_RU
-from services import ProtectedStaticFiles, create_new_user, delete_file_from_disk, get_err_message, load_internationalization_data, background_checks, makeFileResponse, notify_all, notify_new_comment, notify_task_closing, personal, save_user_file_to_disk, how_much_messages
+from services import ProtectedStaticFiles, create_new_user, delete_file_from_disk, get_err_message, load_internationalization_data, makeFileResponse, notify_all, notify_new_comment, notify_task_closing, personal, save_user_file_to_disk
 
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -567,11 +569,18 @@ async def add_fio(user_fio: UserFio, session: SessionDep, current_user: UserInfo
         return {"result": "error", "details": "An error occurred while updating the user's full name" if settings.language == "en" else "Произошла ошибка при обновлении полного имени пользователя"}
 
 
+# notify a user
+@app.post("/users/notify", tags=["Communicator", "users", "email", "sms"], summary="notify a user by email or sms message")
+async def send_notifocation(notifyMessage: NotifyInfo, current_user: UserInfo = Depends(get_current_user)) -> dict:
+    notify = Notifier_factory.create(notifyMessage.messType, notifyMessage.envelope) 
+    return await notify.send(notifyMessage.messtext)
+
+
 # add new comment to the task
 @app.post("/comments/add",  tags=["Communicator", "Comments", "new message"], summary="Add a new comment to the task")
 async def add_comment(new_comment: Comments, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
-    newCommentORM = CommentsOrm(task_id=new_comment.task_id, creator=new_comment.creator, comment=new_comment.comment)
-    result: dict = await db_add_record(session, newCommentORM, f"new comment for task id={new_comment.task_id} user={new_comment.creator}")
+    newComment_record = CommentsOrm(task_id=new_comment.task_id, creator=new_comment.creator, comment=new_comment.comment)
+    result: dict = await db_add_record(session, newComment_record, f"new comment for task id={new_comment.task_id} user={new_comment.creator}")
     await notify_new_comment(session, new_comment.task_id, new_comment.creator)               
     return result
 

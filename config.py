@@ -126,6 +126,12 @@ class Settings(BaseSettings):
     force_recreate_db: bool = False   
     hold_closed_tasks_days: int = 180
     hold_messages_days: int = 730
+    sms_notifications_url: str = ""
+    sms_notifications_login: str = ""
+    sms_notifications_password: str = ""
+    email_notifications_url: str = ""
+    email_notifications_login: str = ""
+    email_notifications_password: str = ""
 
 
     # Указываем, откуда брать данные

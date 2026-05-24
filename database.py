@@ -4,7 +4,7 @@ from fastapi import Depends
 from sqlalchemy import URL, Result, TextClause, text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from typing import Annotated, Any
-from models import Base
+from models import Base, UserInfo
 from config import settings, logger
 
 
@@ -80,7 +80,6 @@ async def create_all_tables():
         logger.success("Database tables were created successfully")        
         
 
-
 async def db_add_record(session: AsyncSession, model_instance: Base, log_label: str = "Record") -> dict:
     try:
         session.add(model_instance)
@@ -126,4 +125,36 @@ async def get_massages_from_db(id: int, session: AsyncSession, history: bool = F
             ORDER BY m.id
         """)    
         result = await session.execute(sql, {"mess_id": id}) 
+    return result.mappings().all()
+
+
+async def background_checks(session_factory: async_sessionmaker) -> None:
+    logger.info("Activity check started")
+    async with session_factory() as session:
+        sql = text("""
+            UPDATE users SET active = CASE WHEN EXISTS(
+	            SELECT M.id FROM messages M WHERE M.userid=users.userid AND (EXTRACT(EPOCH FROM (now() - M.created_at)) < 300) 
+	        ) OR EXISTS(
+	            SELECT R.mess_id FROM mess_read R WHERE R.userid=users.userid AND (EXTRACT(EPOCH FROM (now() - R.read_time)) < 300)
+	        ) THEN true ELSE false END; 
+               """) 
+        await session.execute(sql)
+        await session.commit()
+        logger.success("Activity check completed successfully")
+
+
+async def how_much_messages(session: SessionDep) -> int:
+    sql = text("SELECT COUNT(*) FROM messages")
+    result = await session.execute(sql)
+    return result.scalar() or 0
+
+
+#  Checking that the user has read/liked the message (adding the user to the read/liked table and returning the count of read/liked users)
+async def make_message_read_liked(session: SessionDep, message_id: int, current_user: UserInfo, tableName: str, resultOnly: bool = False):
+    if not resultOnly: 
+        sql: TextClause = text(f"INSERT INTO {tableName}(mess_id, userid) SELECT A.id, :user_id FROM messages A WHERE A.id=:id AND NOT EXISTS(SELECT B.userid FROM {tableName} B WHERE B.mess_id=:mess_id AND B.userid=:userid)") 
+        result = await session.execute(sql, {"user_id": current_user.userid, "id": message_id, "mess_id": message_id, "userid": current_user.userid}) 
+        await session.commit()
+    sql: TextClause = text(f"SELECT R.mess_id, count(*) as cnt FROM {tableName} R WHERE R.mess_id=:id GROUP BY R.mess_id")
+    result = await session.execute(sql, {"id": message_id})
     return result.mappings().all()

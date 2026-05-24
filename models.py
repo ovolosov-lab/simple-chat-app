@@ -1,9 +1,10 @@
 import enum
-from typing import Annotated
+import re
+from typing import Annotated, Literal
 
 from annotated_types import Gt
 import bleach
-from pydantic import AfterValidator, BaseModel, BeforeValidator, Field
+from pydantic import AfterValidator, BaseModel, BeforeValidator, EmailStr, Field, field_validator
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -191,6 +192,32 @@ class Comments(BaseModel):
     creator: Annotated[int, Gt(0)]
     comment: Annotated[str, clean_before_bi, Field(min_length=3, max_length=2000)]         
 
+
+# Базовый класс для контактных данных получателя и отправителя
+class Envelope(BaseModel):
+    pass
+
+# Специализированный тип для Email с авто-валидацией
+class EmailEnvelope(Envelope):
+    address: EmailStr  
+    subject: Annotated[str, clean_before, Field(min_length=1, max_length=200)]  
+
+# Специализированный тип для SMS с кастомной валидацией телефона
+class SmsEnvelope(Envelope):
+    phone: str
+    sender: Annotated[str, clean_before, Field(max_length=11)] 
+
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        clean_phone = re.sub(r'\D', '', v)
+        if not (10 <= len(clean_phone) <= 15):
+            raise ValueError("Not a phone number!")
+        return f"+{clean_phone}"
     
+class NotifyInfo(BaseModel):
+    messType: Literal['email', 'sms']
+    envelope: EmailEnvelope | SmsEnvelope 
+    messtext: Annotated[str, clean_before_bi, Field(min_length=3, max_length=4000)] 
 
 
