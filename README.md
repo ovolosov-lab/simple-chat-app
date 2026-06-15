@@ -15,6 +15,7 @@ I would be delighted if you'd try this messenger and share your feedback, bug re
 - **Search:** Quick search through messages.
 - **Task Management:** Create, edit and discuss project-related tasks. Observe them on the diagram.
 - **File Sharing:** Support for uploading and storing important project documentation.
+- **Communication with AI:** Ask AI questions and engage it in solving your problems.
 
 ## 🛠 Technology Stack
 - **Language:** Python 3.12 (Slim)
