@@ -5,7 +5,7 @@ from typing import Annotated, Literal
 from sqlalchemy.sql import func
 from sqlalchemy import select
 from send2anywhere import Notifier_factory
-from services import daily_morning_task 
+from services import ai_session, daily_morning_task 
 from contextlib import asynccontextmanager
 import uvicorn
 from fastapi.exceptions import RequestValidationError
@@ -18,11 +18,12 @@ from sqlalchemy.exc import IntegrityError
 from fastapi.middleware.cors import CORSMiddleware
 from database import db_add_record, db_connection_check, engine, SessionDep, check_user, create_all_tables, get_massages_from_db, user_exists, new_session
 from database import background_checks, make_message_read_liked, how_much_messages
-from models import AttachmentsOrm, Comments, CommentsOrm, DeadlineEdit, DocsNotes, MessId, Message, MessageOrm, NewUser, NotifyInfo, TaskAttachmentsOrm, TaskEdit, TaskState, Tasks, TasksOrm, User, UserFio, UserInfo, Docs, DocsOrm 
+from models import AttachmentsOrm, Comments, CommentsOrm, DeadlineEdit, DocsNotes, MessId, Message, MessageOrm, NewUser, NotifyInfo, TaskAttachmentsOrm, TaskEdit, TaskState, Tasks, TasksOrm, User, UserInfo, Docs, DocsOrm, UserProps 
 from sheduler import AsyncPeriodicTask, AsyncDailyTask
 from tokens import create_access_token, get_current_user 
 from config import BASE_DIR, UPLOAD_DIR, settings, logger, ERROR_MESSAGES_EN, ERROR_MESSAGES_RU
 from services import ProtectedStaticFiles, create_new_user, delete_file_from_disk, get_err_message, load_internationalization_data, makeFileResponse, notify_all, notify_new_comment, notify_task_closing, personal, save_user_file_to_disk
+from ai import aiModel
 
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -37,7 +38,7 @@ templates: Jinja2Templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "t
 async def lifespan(app: FastAPI):
     await db_connection_check()
     await create_all_tables()
-    # Background task for checking users activity every XX minutes (if there are messages read or sent in the last XX minutes - user is active, if not - user is inactive)
+    # Background task for checking users activity every XX minutes 
     periodic_task = AsyncPeriodicTask(interval=settings.users_activity_check_interval, task_func=lambda: background_checks(new_session))
     periodic_task.start()
     # Daily task for notifying about deadlines (every day at 8:00 AM)
@@ -69,7 +70,6 @@ app.add_middleware(
 # Health check endpoint to verify that the application is running and can connect to the database
 @app.get("/health")
 async def health_check() -> JSONResponse:
-    """Health check endpoint to verify that the application is running and can connect to the database."""
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
@@ -113,8 +113,13 @@ async def messages(id: int, session: SessionDep, current_user: UserInfo = Depend
 # Add a new message to the messages list
 @app.post("/messages/add",  tags=["Communicator", "new message"], summary="Add a new message")
 async def add_message(new_message: Message, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
+    result: dict = {"result": "error"}
     message_orm = MessageOrm(**new_message.model_dump(), checked=0)
-    return await db_add_record(session, message_orm, log_label=f"new message from user id={new_message.userid}")        
+    result = await db_add_record(session, message_orm, log_label=f"new message from user id={new_message.userid}")    
+    if result["result"] == "ok" and aiModel.active:
+        if (len(new_message.messtext)>3) and ("AI" in new_message.messtext[:4].upper() or "ИИ" in new_message.messtext[:4].upper()):
+            result = await ai_session(session, new_message.messtext, new_message.userid)
+    return result    
 
 
 # Create a new user with the registration form data, checking the password confirmation and the uniqueness of the username, 
@@ -172,7 +177,7 @@ async def message_like(like: MessId, session: SessionDep, current_user: UserInfo
 # Get the list of all users with their activity status (active/inactive) and fio for the personal messages page
 @app.get("/users/get_activity", tags=["Communicator", "users", "activity"], summary="Get list of the activ users")
 async def get_users_activity(session: SessionDep, current_user: UserInfo = Depends(get_current_user)):
-    sql: TextClause = text("SELECT u.userid, u.username, u.active, u.fio, u.avatar FROM users u ORDER BY u.username") 
+    sql: TextClause = text("SELECT u.userid, u.username, u.active, u.fio, u.avatar, u.email, u.ai_role FROM users u ORDER BY u.username") 
     result = await session.execute(sql) 
     return result.mappings().all()
 
@@ -557,10 +562,10 @@ async def add_doc_description(descr: DocsNotes, session: SessionDep, current_use
 
 # add / update user's full name
 @app.post("/users/fio", tags=["Communicator", "users", "fio"], summary="add first / last names")
-async def add_fio(user_fio: UserFio, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
-    sql: TextClause = text("""UPDATE users SET fio=:fio, avatar=:avatar WHERE userid=:userid""")
+async def add_fio(userProps: UserProps, session: SessionDep, current_user: UserInfo = Depends(get_current_user)) -> dict:
+    sql: TextClause = text("""UPDATE users SET fio=:fio, avatar=:avatar, email=:email, ai_role=:ai_role WHERE userid=:userid""")
     try:
-        await session.execute(sql, {"fio": user_fio.fio, "avatar": user_fio.avatar, "userid": user_fio.userid}) 
+        await session.execute(sql, {"fio": userProps.fio, "avatar": userProps.avatar, "userid": userProps.userid, "email": userProps.email, "ai_role": userProps.ai_role}) 
         await session.commit()
         return {"result": "OK"}
     except Exception as e:

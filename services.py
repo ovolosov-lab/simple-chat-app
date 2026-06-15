@@ -13,11 +13,13 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import TextClause, delete, text
 from sqlalchemy import select, cast, Date
-from models import MessageOrm, UserInfo, NewUser, TasksOrm, UserOrm
-from database import SessionDep, async_sessionmaker, check_user
+from models import AI_Sessions, MessageOrm, NewUser, TasksOrm, UserOrm
+from database import SessionDep, async_sessionmaker, check_user, create_ai_history, db_add_record, user_exists
 from config import ERROR_MESSAGES_EN, ERROR_MESSAGES_RU, UPLOAD_DIR, settings, logger
 from personal import PersonalMessages
 from tokens import create_access_token, get_current_user
+from groq.types.chat import ChatCompletionMessageParam
+from ai import aiModel
 
 
 personal: PersonalMessages = PersonalMessages()
@@ -213,4 +215,33 @@ async def notify_new_comment(session: SessionDep, task_id: int, creator: int) ->
     if row:
         message: str = f"Создан комментарий к задаче {row.title}" if settings.language == "ru" else f"A comment has been created for the task {row.title}"  
         await notify_all(session, message, creator)
+
+
+async def ask_ai_get_response(session: SessionDep, question: str) -> dict:
+    response: str | None = await aiModel.ask_me(question)
+    if response:
+        if not await user_exists("ai", session):
+            user_orm = UserOrm(username="ai", password="911!!_l,sdfg0367>", active=False, fio="Artificial Intelligence")
+            await db_add_record(session, user_orm, "User")
+        userId = await check_user("ai", "911!!_l,sdfg0367>", session, True)    
+        message_orm = MessageOrm(userid=userId, messtext=response)
+        await db_add_record(session, message_orm, log_label=f"new message from ai")      
+    return {"result": "ok"}
+
+
+async def ai_session(session: SessionDep, question: str, userid: int) -> dict:
+    session_history: list[ChatCompletionMessageParam] = await create_ai_history(session, question, userid)
+
+    response: str | None = await aiModel.send_session_history(sess_history=session_history)
+
+    if response:
+        if not await user_exists("ai", session):
+            await db_add_record(session, UserOrm(username="ai", password="911!!_l,sdfg0367>", active=False, fio="Artificial Intelligence", avatar="&#129302;"), "User")
+        ai_userId = await check_user("ai", "911!!_l,sdfg0367>", session, True)
+
+        await db_add_record(session, MessageOrm(userid=ai_userId, messtext=response), log_label=f"new message from ai") 
+
+        await db_add_record(session, AI_Sessions(userid=userid, messtext=question, role='user'), log_label=f"new question for ai to session")  
+        await db_add_record(session, AI_Sessions(userid=userid, messtext=response, role='assistant'), log_label=f"new response from ai to session")  
+    return {"result": "ok"}
 

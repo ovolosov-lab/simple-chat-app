@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from typing import Annotated, Any
 from models import Base, UserInfo
 from config import settings, logger
+from groq.types.chat import ChatCompletionMessageParam
 
 
 DATABASE_URL = URL.create(
@@ -25,6 +26,8 @@ async def get_session():
         yield session
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
+
+# ---------------------------------------------------------------------------------------------------------------------------
 
 async def db_connection_check() -> None:
     """Database connection check at application startup. If the connection fails, the application will not start."""
@@ -55,13 +58,13 @@ async def user_exists(username: str, session: SessionDep) -> bool:
         return False   
 
 
-async def check_user(username: str, password: str, session: SessionDep) -> int:
+async def check_user(username: str, password: str, session: SessionDep, justFind: bool=False) -> int:
     sql = text("SELECT userid, password FROM users WHERE username = :uname LIMIT 1")
     result = await session.execute(sql, {"uname": username}) 
     row = result.first()
     if row:
         #if verify_password(password, row.password):
-        if password == row.password:
+        if justFind or (password == row.password):
             return row.userid
         else:
             return 0
@@ -151,10 +154,49 @@ async def how_much_messages(session: SessionDep) -> int:
 
 #  Checking that the user has read/liked the message (adding the user to the read/liked table and returning the count of read/liked users)
 async def make_message_read_liked(session: SessionDep, message_id: int, current_user: UserInfo, tableName: str, resultOnly: bool = False):
-    if not resultOnly: 
-        sql: TextClause = text(f"INSERT INTO {tableName}(mess_id, userid) SELECT A.id, :user_id FROM messages A WHERE A.id=:id AND NOT EXISTS(SELECT B.userid FROM {tableName} B WHERE B.mess_id=:mess_id AND B.userid=:userid)") 
-        result = await session.execute(sql, {"user_id": current_user.userid, "id": message_id, "mess_id": message_id, "userid": current_user.userid}) 
+    if not resultOnly:
+        sql: TextClause = text(
+            f"INSERT INTO {tableName}(mess_id, userid) "
+            "SELECT A.id, :user_id FROM messages A "
+            "WHERE A.id=:id "
+            f"AND NOT EXISTS(SELECT B.userid FROM {tableName} B "
+            "WHERE B.mess_id=:mess_id AND B.userid=:userid)"
+        )
+        result = await session.execute(
+            sql,
+            {
+                "user_id": current_user.userid,
+                "id": message_id,
+                "mess_id": message_id,
+                "userid": current_user.userid,
+            },
+        )
         await session.commit()
     sql: TextClause = text(f"SELECT R.mess_id, count(*) as cnt FROM {tableName} R WHERE R.mess_id=:id GROUP BY R.mess_id")
     result = await session.execute(sql, {"id": message_id})
     return result.mappings().all()
+
+
+async def get_imperative(session: SessionDep, userid: int) -> list[ChatCompletionMessageParam]:
+    imperative:list[ChatCompletionMessageParam] = [{"role": "system", "content": settings.ai_role}]
+
+    sql:TextClause = text("SELECT ai_role FROM users WHERE userid = :userid LIMIT 1")
+    result = await session.execute(sql, {"userid": userid}) 
+    row = result.first()
+    if row:
+        if row.ai_role != "":
+            imperative = [{"role": "system", "content": row.ai_role}]
+    return imperative
+
+
+async def create_ai_history(session: SessionDep, question: str, userid: int) -> list[ChatCompletionMessageParam]:
+    history: list[ChatCompletionMessageParam] = await get_imperative(session, userid)
+
+    sql: TextClause = text("SELECT role, messtext AS content FROM ai_sessions WHERE userid=:userid ORDER BY id desc LIMIT :limit") 
+    result = await session.execute(sql, {"userid": userid, "limit": settings.ai_session_length})
+    for row in reversed(result.all()):
+        history.append({'role': row.role, 'content': row.content}) 
+
+    history.append({'role': 'user', 'content': question}) 
+
+    return history

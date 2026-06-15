@@ -132,6 +132,11 @@ class Settings(BaseSettings):
     email_notifications_url: str = ""
     email_notifications_login: str = ""
     email_notifications_password: str = ""
+    use_ai_in_chat: bool = False
+    groq_api_key: str = ""  
+    groq_model_name: str = "llama-3.1-8b-instant"
+    ai_session_length: int = 5
+    ai_role: str = "Ты опытный бэкенд-разработчик. Отвечай кратко и по делу."
 
 
     # Указываем, откуда брать данные

@@ -10,6 +10,7 @@ from sqlalchemy import Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import date, datetime
 from sqlalchemy import DateTime, func
+from config import settings
 
 
 class Base(DeclarativeBase):
@@ -28,6 +29,7 @@ class UserOrm(Base):
         index=True
     )  
     avatar: Mapped[str] = mapped_column(String(10), nullable=True, default='&#129489')  
+    ai_role: Mapped[str] = mapped_column(String(2000), nullable=True, default=settings.ai_role)
 
 class MessageOrm(Base):
     __tablename__ = "messages"
@@ -121,6 +123,13 @@ class DocsOrm(Base):
         index=True
     )
 
+class AI_Sessions(Base):    
+    __tablename__ = "ai_sessions"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    userid: Mapped[int] = mapped_column(ForeignKey('users.userid', ondelete="CASCADE"), index=True)
+    messtext: Mapped[str] = mapped_column(String(6000), nullable=False)
+    role: Mapped[str] = mapped_column(String(10), nullable=False, default='user')
+
 # --------------------------- Pydantic classes -----------------------
 
 clean_before = BeforeValidator(lambda v: bleach.clean(str(v or ''), strip=True).strip())
@@ -151,11 +160,11 @@ class NewUser(BaseModel):
     
 class UserInfo(BaseModel):
     userid: Annotated[int, Gt(0)]
-    username: Annotated[str, clean_before, Field(min_length=3, max_length=20)] 
+    username: Annotated[str, clean_before, Field(min_length=2, max_length=20)] 
 
 class MessId(BaseModel):
     id: Annotated[int, Gt(0)]
-    username: Annotated[str, clean_before, Field(min_length=3, max_length=20)] 
+    username: Annotated[str, clean_before, Field(min_length=2, max_length=20)] 
 
 class Tasks(BaseModel):
     id: Annotated[int, Gt(0)]
@@ -176,10 +185,12 @@ class DeadlineEdit(BaseModel):
     userid: Annotated[int, Gt(0)]
     deadline: FutureDate
 
-class UserFio(BaseModel):
+class UserProps(BaseModel):
     userid: Annotated[int, Gt(0)]  
     fio: Annotated[str, clean_before, Field(min_length=3, max_length=100)] 
     avatar: Annotated[str, AfterValidator(str.strip), Field(pattern=r"^[0-9&#;axAF-f]+$", min_length=3, max_length=10)]   
+    email: Annotated[str, EmailStr] 
+    ai_role: Annotated[str, Field(max_length=2000)]
 
 class Docs(BaseModel):
     mess_id: Annotated[int, Gt(0)]

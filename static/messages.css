@@ -217,6 +217,11 @@ hr {
   box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.2);
 }
 
+.ai_message {
+  background: #e3f3fc;
+  border: rgb(0, 255, 229) solid 1px;
+}
+
 .welcome {
   background: #fff;
   border: rgb(0, 255, 229) solid 1px;

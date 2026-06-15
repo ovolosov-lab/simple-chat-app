@@ -51,6 +51,8 @@
     "note_confirm": "Save",
     "userDlg_title": "User's Full Name",
     "fio_placeholder": "Enter full name here",
+    "email_placeholder": "Enter users Email here",    
+    "ai_role_placeholder": "Enter AI role here",
     "fio_cancel": "Cancel",
     "fio_confirm": "Save",
     "menu_item_read": "Read",

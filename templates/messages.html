@@ -167,6 +167,8 @@
     <dialog id="userDlg" data-userid="{{userid}}">
         <p>{{userDlg_title}} ({{username}}):</p>
         <div><input type="text" name="fio" id="fio" maxlength="100" placeholder="{{fio_placeholder}}" value=""></div>
+        <div><input type="text" name="email" id="email" maxlength="100" placeholder="{{email_placeholder}}" value=""></div>
+        <div><input type="text" name="ai_role" id="ai_role" maxlength="2000" placeholder="{{ai_role_placeholder}}" value=""></div>
         <select id="avatar_sel"> </select>
         <button id="fio_cancel">{{fio_cancel}}</button>
         <button id="fio_confirm">{{fio_confirm}}</button>
@@ -406,7 +408,7 @@
                 if (users.username != userName) {
                     title_cl = `title="${users.fio}&#10;{{send_personal_message_title2}}" onclick="personal_message(${users.userid}, '${userName}')"`;
 
-                } else { title_cl = `style="cursor:default;" title="${users.fio}"`; userDlg.dataset.fio = users.fio; userDlg.dataset.avatar = users.avatar; }
+                } else { title_cl = `style="cursor:default;" title="${users.fio}"`; userDlg.dataset.fio = users.fio; userDlg.dataset.avatar = users.avatar; userDlg.dataset.email = users.email; userDlg.dataset.ai_role = users.ai_role; }
 
                 if ((users.active) || (users.username == userName)) {
                     tempStr = tempStr + `<div class="cloud-text-wrapper"><span class="one_user active_user" ${title_cl}><b>${users.avatar}</b>${users.username}</span></div>`;
@@ -471,14 +473,18 @@
                     div.id = `mess_${msg.id}`;
                     if (!isRight) {
                         isRight = true;
-                        if (msg.username == userName) {
+                        if (msg.username == "ai") {
+                            div.className = 'message-box ai_message';
+                        } else if (msg.username == userName) {
                             div.className = 'my-message-box';
                         } else {
                             div.className = 'message-box';
                         }
                     } else {
                         isRight = false;
-                        if (msg.username == userName) {
+                        if (msg.username == "ai") {
+                            div.className = 'message-box-right ai_message';
+                        } else if (msg.username == userName) {
                             div.className = 'my-message-box-right';
                         } else {
                             div.className = 'message-box-right';
@@ -563,8 +569,11 @@
                             isRight = false;
                             className = className + '-right';
                             left_right = "";
-                        } else { isRight = true; }
+                        } else { isRight = true; }                        
                         div.className = className;
+                        if (msg.username == "ai") {
+                            div.classList.add('ai_message');
+                        }                         
                         if ((msg.messtext.includes("&#128206")) || (msg.messtext.includes("<img"))) {
                             let mess_text = msg.messtext;
                             if (msg.messtext.includes("&#128206")) {
@@ -914,6 +923,9 @@
                             className = className + '-right';
                         } else { isRight = true; }
                         div.className = className;
+                        if (msg.username == "ai") {
+                            div.classList.add('ai_message');
+                        }                         
                         if ((msg.messtext.includes("&#128206")) || (msg.messtext.includes("<img")) || (msg.task == 1)) {
                             let mess_text = msg.messtext;
                             if (msg.messtext.includes("&#128206")) {
@@ -1747,13 +1759,15 @@
                 body: JSON.stringify({
                     userid: userDlg.dataset.userid,
                     fio: document.getElementById('fio').value, 
-                    avatar: document.getElementById('avatar_sel').value
+                    avatar: document.getElementById('avatar_sel').value,
+                    email: document.getElementById('email').value,
+                    ai_role: document.getElementById('ai_role').value,
                 })
             });
             const data = await response.json();
             if (data) {
                 if (data.result == "OK") {
-                    console.log(`Users fullname / avatar ${userName} were changed`);
+                    console.log(`Users proprties ${userName} were changed`);
                     await fetchActivUsers();
                 }
             }
@@ -1763,7 +1777,9 @@
 
         function show_user_dialog() {
             document.getElementById('fio').value = userDlg.dataset.fio;
-            const select = document.querySelector('#avatar_sel');
+            const select = document.querySelector('#avatar_sel');            
+            document.getElementById('email').value = userDlg.dataset.email;            
+            document.getElementById('ai_role').value = userDlg.dataset.ai_role;
             const data = ['&#127939;','&#9792;','&#128694;','&#128187;', '&#128300;', '&#129489;',
             '&#128295;','&#128188;','&#128105;','&#9992;','&#128373;','&#129333;','&#129464;','&#129499;',
             '&#9794;','&#127947;','&#128692;','&#128483;','&#128100;','&#9878;',
