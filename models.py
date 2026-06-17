@@ -29,6 +29,7 @@ class UserOrm(Base):
         index=True
     )  
     avatar: Mapped[str] = mapped_column(String(10), nullable=True, default='&#129489')  
+    email: Mapped[str] = mapped_column(String(100), nullable=True, default='')  
     ai_role: Mapped[str] = mapped_column(String(2000), nullable=True, default=settings.ai_role)
 
 class MessageOrm(Base):
