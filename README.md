@@ -1,5 +1,5 @@
 # Colleagues Messenger
-![License: MIT](https://shields.io) ![Python](https://shields.io) ![PostgreSQL](https://shields.io)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg) ![Python](https://img.shields.io/badge/Python-3.12-3776ab?logo=python&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white)
 
 Simple messenger: A web application built with FastAPI and PostgreSQL, fully containerized with Docker.
 
